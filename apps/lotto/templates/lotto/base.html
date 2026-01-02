@@ -1,6 +1,6 @@
 <!doctype html>
 {% load static %}
-<html lang="zh-Hans">
+<html lang="{{ request.LANGUAGE_CODE|default:'zh-hans' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,12 +16,20 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarMain">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="/">主页</a></li>
-                <li class="nav-item"><a class="nav-link" href="/analysis/">分析</a></li>
-                <li class="nav-item"><a class="nav-link" href="/recommendations/">推荐</a></li>
-                <li class="nav-item"><a class="nav-link" href="/rules/">规则</a></li>
-                <li class="nav-item"><a class="nav-link" href="/data/">数据</a></li>
+            <ul class="navbar-nav ms-auto align-items-lg-center">
+                <li class="nav-item"><a class="nav-link" href="/">{% if lang == 'en' %}Home{% else %}主页{% endif %}</a></li>
+                <li class="nav-item"><a class="nav-link" href="/analysis/">{% if lang == 'en' %}Analysis{% else %}分析{% endif %}</a></li>
+                <li class="nav-item"><a class="nav-link" href="/ai/">{% if lang == 'en' %}AI Lab{% else %}AI 实验{% endif %}</a></li>
+                <li class="nav-item"><a class="nav-link" href="/recommendations/">{% if lang == 'en' %}Recommendations{% else %}推荐{% endif %}</a></li>
+                <li class="nav-item"><a class="nav-link" href="/rules/">{% if lang == 'en' %}Rules{% else %}规则{% endif %}</a></li>
+                <li class="nav-item"><a class="nav-link" href="/data/">{% if lang == 'en' %}Data{% else %}数据{% endif %}</a></li>
+                <li class="nav-item ms-lg-3">
+                    {% if lang == 'en' %}
+                        <a class="btn btn-outline-light btn-sm" href="{{ request.path }}?lang=zh">中文</a>
+                    {% else %}
+                        <a class="btn btn-outline-light btn-sm" href="{{ request.path }}?lang=en">English</a>
+                    {% endif %}
+                </li>
             </ul>
         </div>
     </div>

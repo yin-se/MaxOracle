@@ -1,34 +1,34 @@
 {% extends 'lotto/base.html' %}
 {% load static %}
 
-{% block title %}分析 | MaxOracle{% endblock %}
+{% block title %}{% if lang == 'en' %}Analysis | MaxOracle{% else %}分析 | MaxOracle{% endif %}{% endblock %}
 
 {% block content %}
-<h2 class="mb-3">历史分析与图表</h2>
+<h2 class="mb-3">{% if lang == 'en' %}Historical Analysis & Charts{% else %}历史分析与图表{% endif %}</h2>
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form id="analysis-filter" class="row g-3" data-default="{{ window_default }}">
             <div class="col-md-3">
-                <label class="form-label">样本窗口（期数）</label>
+                <label class="form-label">{% if lang == 'en' %}Window (draws){% else %}样本窗口（期数）{% endif %}</label>
                 <select class="form-select" name="window">
                     <option value="100" {% if window_default == 100 %}selected{% endif %}>100</option>
                     <option value="500" {% if window_default == 500 %}selected{% endif %}>500</option>
                     <option value="1000" {% if window_default == 1000 %}selected{% endif %}>1000</option>
                     <option value="2000" {% if window_default == 2000 %}selected{% endif %}>2000</option>
-                    <option value="0" {% if window_default == 0 %}selected{% endif %}>全部</option>
+                    <option value="0" {% if window_default == 0 %}selected{% endif %}>{% if lang == 'en' %}All{% else %}全部{% endif %}</option>
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">开始日期</label>
+                <label class="form-label">{% if lang == 'en' %}Start Date{% else %}开始日期{% endif %}</label>
                 <input type="date" class="form-control" name="start_date">
             </div>
             <div class="col-md-3">
-                <label class="form-label">结束日期</label>
+                <label class="form-label">{% if lang == 'en' %}End Date{% else %}结束日期{% endif %}</label>
                 <input type="date" class="form-control" name="end_date">
             </div>
             <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-primary w-100" type="submit">刷新图表</button>
+                <button class="btn btn-primary w-100" type="submit">{% if lang == 'en' %}Refresh Charts{% else %}刷新图表{% endif %}</button>
             </div>
         </form>
     </div>
@@ -37,25 +37,25 @@
 <div class="row g-4">
     <div class="col-lg-6">
         <div class="chart-card">
-            <h5>主号频次</h5>
+            <h5>{% if lang == 'en' %}Main Number Frequency{% else %}主号频次{% endif %}</h5>
             <canvas id="mainFrequencyChart"></canvas>
         </div>
     </div>
     <div class="col-lg-6">
         <div class="chart-card">
-            <h5>Bonus 频次</h5>
+            <h5>{% if lang == 'en' %}Bonus Frequency{% else %}Bonus 频次{% endif %}</h5>
             <canvas id="bonusFrequencyChart"></canvas>
         </div>
     </div>
     <div class="col-lg-6">
         <div class="chart-card">
-            <h5>滚动频次（Top 5 热号）</h5>
+            <h5>{% if lang == 'en' %}Rolling Frequency (Top 5){% else %}滚动频次（Top 5 热号）{% endif %}</h5>
             <canvas id="rollingChart"></canvas>
         </div>
     </div>
     <div class="col-lg-6">
         <div class="chart-card">
-            <h5>和值分布</h5>
+            <h5>{% if lang == 'en' %}Sum Distribution{% else %}和值分布{% endif %}</h5>
             <canvas id="sumDistributionChart"></canvas>
         </div>
     </div>
@@ -64,5 +64,12 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    window.ANALYSIS_I18N = {
+        mainLabel: "{% if lang == 'en' %}Main Number Frequency{% else %}主号频次{% endif %}",
+        bonusLabel: "{% if lang == 'en' %}Bonus Frequency{% else %}Bonus 频次{% endif %}",
+        distributionLabel: "{% if lang == 'en' %}Distribution{% else %}分布{% endif %}",
+    };
+</script>
 <script src="{% static 'lotto/js/analysis.js' %}"></script>
 {% endblock %}

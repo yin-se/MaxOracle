@@ -1,40 +1,51 @@
 {% extends 'lotto/base.html' %}
 {% load static %}
 
-{% block title %}主页 | MaxOracle{% endblock %}
+{% block title %}{% if lang == 'en' %}Home | MaxOracle{% else %}主页 | MaxOracle{% endif %}{% endblock %}
 
 {% block content %}
 <div class="hero-section mb-5">
     <div class="row align-items-center g-4">
         <div class="col-lg-7">
-            <span class="pill-badge">OLG Lotto Max 数据分析</span>
-            <h1 class="display-5 fw-bold mt-3">Lotto Max 是什么？</h1>
+    <span class="pill-badge">{% if lang == 'en' %}OLG Lotto Max Insights{% else %}OLG Lotto Max 数据分析{% endif %}</span>
+    <h1 class="display-5 fw-bold mt-3">{% if lang == 'en' %}What is Lotto Max?{% else %}Lotto Max 是什么？{% endif %}</h1>
             <p class="lead mt-3 mb-4">
-                Lotto Max 是加拿大热门乐透游戏之一，每期从 1–50 中抽出 7 个主号和 1 个 Bonus 号。
-                本站聚焦历史数据统计、可视化趋势与结构分析，帮助你更系统地理解号码分布。
+        {% if lang == 'en' %}
+        Lotto Max is a popular Canadian lottery. Each draw selects 7 main numbers plus 1 Bonus from 1–50.
+        This site focuses on historical statistics, visual trends, and structural analysis to help you understand number distributions.
+        {% else %}
+        Lotto Max 是加拿大热门乐透游戏之一，每期从 1–50 中抽出 7 个主号和 1 个 Bonus 号。
+        本站聚焦历史数据统计、可视化趋势与结构分析，帮助你更系统地理解号码分布。
+        {% endif %}
             </p>
             <div class="d-flex flex-wrap gap-2">
-                <a class="btn btn-light text-primary fw-bold" href="/analysis/">进入分析</a>
-                <a class="btn btn-outline-light" href="/recommendations/">查看推荐</a>
-                <a class="btn btn-outline-light" href="/rules/">游戏规则</a>
+        <a class="btn btn-light text-primary fw-bold" href="/analysis/">{% if lang == 'en' %}View Analysis{% else %}进入分析{% endif %}</a>
+        <a class="btn btn-outline-light" href="/recommendations/">{% if lang == 'en' %}See Picks{% else %}查看推荐{% endif %}</a>
+        <a class="btn btn-outline-light" href="/rules/">{% if lang == 'en' %}Game Rules{% else %}游戏规则{% endif %}</a>
             </div>
             <div class="row mt-4 g-3">
                 <div class="col-md-4">
                     <div class="hero-card">
-                        <div class="small text-uppercase">已抓取期数</div>
+                    <div class="small text-uppercase">{% if lang == 'en' %}Draws Collected{% else %}已抓取期数{% endif %}</div>
                         <div class="fs-4 fw-bold">{{ total_draws }}</div>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="hero-card">
-                        <div class="small text-uppercase">最近一期</div>
-                        <div class="fw-bold">{{ latest_draw.date|default:'暂无数据' }}</div>
+                    <div class="small text-uppercase">{% if lang == 'en' %}Latest Draw{% else %}最近一期{% endif %}</div>
+                    <div class="fw-bold">
+                        {% if latest_draw %}
+                            {{ latest_draw.date|date:"DATE_FORMAT" }}
+                        {% else %}
+                            {% if lang == 'en' %}N/A{% else %}暂无数据{% endif %}
+                        {% endif %}
+                    </div>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="hero-card">
-                        <div class="small text-uppercase">数据来源</div>
-                        <div class="fw-bold">公开历史开奖</div>
+                    <div class="small text-uppercase">{% if lang == 'en' %}Data Source{% else %}数据来源{% endif %}</div>
+                    <div class="fw-bold">{% if lang == 'en' %}Public draw history{% else %}公开历史开奖{% endif %}</div>
                     </div>
                 </div>
             </div>
@@ -48,29 +59,42 @@
 <div class="row g-4 mb-5">
     <div class="col-lg-4">
         <div class="feature-card">
-            <h6>规则速览</h6>
-            <h4 class="mt-2">Lotto Max 玩法</h4>
+            <h6>{% if lang == 'en' %}Rules Snapshot{% else %}规则速览{% endif %}</h6>
+            <h4 class="mt-2">{% if lang == 'en' %}How Lotto Max Works{% else %}Lotto Max 玩法{% endif %}</h4>
             <p class="text-muted mb-0">
+                {% if lang == 'en' %}
+                Each draw randomly selects 7 main numbers and 1 Bonus from 1–50.
+                Common prize tiers include 7/7, 6/7+Bonus, 6/7, and more.
+                {% else %}
                 每期从 1–50 中随机开出 7 个主号与 1 个 Bonus 号。
                 常见中奖档位包含 7/7、6/7+Bonus、6/7 等。
+                {% endif %}
             </p>
         </div>
     </div>
     <div class="col-lg-4">
         <div class="feature-card">
-            <h6>统计分析</h6>
-            <h4 class="mt-2">趋势与结构洞察</h4>
+            <h6>{% if lang == 'en' %}Statistics{% else %}统计分析{% endif %}</h6>
+            <h4 class="mt-2">{% if lang == 'en' %}Trends & Structure{% else %}趋势与结构洞察{% endif %}</h4>
             <p class="text-muted mb-0">
+                {% if lang == 'en' %}
+                View main/bonus frequency, hot/cold numbers, omissions, sum distribution, and consecutive ratios with rolling windows.
+                {% else %}
                 展示主号/Bonus 频次、冷热号码、遗漏期数、和值分布与连号比例，支持滚动窗口对比。
+                {% endif %}
             </p>
         </div>
     </div>
     <div class="col-lg-4">
         <div class="feature-card">
-            <h6>策略推荐</h6>
-            <h4 class="mt-2">多算法输出</h4>
+            <h6>{% if lang == 'en' %}Recommendations{% else %}策略推荐{% endif %}</h6>
+            <h4 class="mt-2">{% if lang == 'en' %}Multi-Algorithm Picks{% else %}多算法输出{% endif %}</h4>
             <p class="text-muted mb-0">
+                {% if lang == 'en' %}
+                Combine hot/cold balance, smoothed probabilities, recent momentum, and anti-crowd strategies with clear rationale.
+                {% else %}
                 结合热冷平衡、概率平滑、近期热度与反热门策略输出号码建议，并明确算法依据。
+                {% endif %}
             </p>
         </div>
     </div>
@@ -80,14 +104,16 @@
     <div class="col-lg-6">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h5 class="card-title">最新导入状态</h5>
+                <h5 class="card-title">{% if lang == 'en' %}Latest Ingestion{% else %}最新导入状态{% endif %}</h5>
                 {% if latest_log %}
-                    <p class="mb-1"><strong>状态：</strong>{{ latest_log.status }}</p>
-                    <p class="mb-1"><strong>来源：</strong>{{ latest_log.source }}</p>
-                    <p class="mb-1"><strong>信息：</strong>{{ latest_log.message }}</p>
-                    <p class="mb-0"><strong>时间：</strong>{{ latest_log.run_at }}</p>
+                    <p class="mb-1"><strong>{% if lang == 'en' %}Status:{% else %}状态：{% endif %}</strong>{{ latest_log.status }}</p>
+                    <p class="mb-1"><strong>{% if lang == 'en' %}Source:{% else %}来源：{% endif %}</strong>{{ latest_log.source }}</p>
+                    <p class="mb-1"><strong>{% if lang == 'en' %}Message:{% else %}信息：{% endif %}</strong>{{ latest_log.message }}</p>
+                    <p class="mb-0"><strong>{% if lang == 'en' %}Time:{% else %}时间：{% endif %}</strong>
+                        {{ latest_log.run_at|date:"DATETIME_FORMAT" }}
+                    </p>
                 {% else %}
-                    <p class="text-muted">尚未导入数据。</p>
+                    <p class="text-muted">{% if lang == 'en' %}No data ingested yet.{% else %}尚未导入数据。{% endif %}</p>
                 {% endif %}
             </div>
         </div>
@@ -95,12 +121,12 @@
     <div class="col-lg-6">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h5 class="card-title">最近一期详情</h5>
+                <h5 class="card-title">{% if lang == 'en' %}Latest Draw Details{% else %}最近一期详情{% endif %}</h5>
                 {% if latest_draw %}
-                    <p class="mb-1"><strong>开奖日期：</strong>{{ latest_draw.date }}</p>
-                    <p class="mb-0"><strong>号码：</strong>{{ latest_draw.numbers|join:' ' }} + Bonus {{ latest_draw.bonus }}</p>
+                    <p class="mb-1"><strong>{% if lang == 'en' %}Draw Date:{% else %}开奖日期：{% endif %}</strong>{{ latest_draw.date|date:"DATE_FORMAT" }}</p>
+                    <p class="mb-0"><strong>{% if lang == 'en' %}Numbers:{% else %}号码：{% endif %}</strong>{{ latest_draw.numbers|join:' ' }} + Bonus {{ latest_draw.bonus }}</p>
                 {% else %}
-                    <p class="text-muted">暂无开奖数据。</p>
+                    <p class="text-muted">{% if lang == 'en' %}No draw data yet.{% else %}暂无开奖数据。{% endif %}</p>
                 {% endif %}
             </div>
         </div>

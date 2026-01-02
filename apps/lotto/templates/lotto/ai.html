@@ -1,0 +1,78 @@
+{% extends 'lotto/base.html' %}
+{% load static %}
+
+{% block title %}{% if lang == 'en' %}AI Lab | MaxOracle{% else %}AI 实验 | MaxOracle{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3">
+    <h2 class="mb-0">{% if lang == 'en' %}AI Lab{% else %}AI 实验{% endif %}</h2>
+    <span class="badge bg-warning text-dark">{% if lang == 'en' %}Experimental{% else %}实验性{% endif %}</span>
+</div>
+
+<p class="text-muted">
+    {% if lang == 'en' %}
+    This module trains a small neural network on recent draws to estimate number probabilities for the next draw.
+    It is for visualization only and does not improve winning odds.
+    {% else %}
+    本模块使用简单神经网络对近期开奖进行学习，输出下一期号码的概率热力图。
+    仅供可视化参考，不代表任何中奖概率提升。
+    {% endif %}
+</p>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form id="ai-filter" class="row g-3" data-default="{{ window_default }}">
+            <div class="col-md-3">
+                <label class="form-label">{% if lang == 'en' %}Window (draws){% else %}样本窗口（期数）{% endif %}</label>
+                <select class="form-select" name="window">
+                    <option value="100" {% if window_default == 100 %}selected{% endif %}>100</option>
+                    <option value="500" {% if window_default == 500 %}selected{% endif %}>500</option>
+                    <option value="1000" {% if window_default == 1000 %}selected{% endif %}>1000</option>
+                    <option value="2000" {% if window_default == 2000 %}selected{% endif %}>2000</option>
+                    <option value="0" {% if window_default == 0 %}selected{% endif %}>{% if lang == 'en' %}All{% else %}全部{% endif %}</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary w-100" type="submit">
+                    {% if lang == 'en' %}Run Model{% else %}运行模型{% endif %}
+                </button>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <div id="ai-meta" class="small text-muted"></div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">{% if lang == 'en' %}Probability Heatmap{% else %}概率热力图{% endif %}</h5>
+        <div id="ai-heatmap" class="ai-heatmap"></div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3">{% if lang == 'en' %}Top 7 by Model Probability{% else %}模型概率 Top 7{% endif %}</h5>
+        <div id="ai-top" class="numbers-display"></div>
+        <p class="small text-muted mt-3 mb-0">
+            {% if lang == 'en' %}
+            These numbers reflect the model's highest estimated probabilities based on historical patterns.
+            {% else %}
+            这些号码为模型估计概率最高的结果，仅用于展示模型输出。
+            {% endif %}
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.AI_I18N = {
+        loading: "{% if lang == 'en' %}Loading...{% else %}加载中...{% endif %}",
+        meta: "{% if lang == 'en' %}Draws: {draws}, Samples: {samples}, Hidden: {hidden}, Epochs: {epochs}{% else %}期数: {draws}，样本: {samples}，隐藏层: {hidden}，轮数: {epochs}{% endif %}",
+        probability: "{% if lang == 'en' %}Prob.{% else %}概率{% endif %}",
+    };
+</script>
+<script src="{% static 'lotto/js/ai.js' %}"></script>
+{% endblock %}

@@ -1,31 +1,52 @@
 {% extends 'lotto/base.html' %}
 {% load static %}
 
-{% block title %}推荐号码 | MaxOracle{% endblock %}
+{% block title %}{% if lang == 'en' %}Recommendations | MaxOracle{% else %}推荐号码 | MaxOracle{% endif %}{% endblock %}
 
 {% block content %}
-<h2 class="mb-3">推荐号码（5 组）</h2>
+<h2 class="mb-3">
+    {% if lang == 'en' %}
+        Recommendations ({{ recommendations|length }})
+    {% else %}
+        推荐号码（{{ recommendations|length }} 组）
+    {% endif %}
+</h2>
 
 <div class="row g-4 recommendation-grid">
     {% for rec in recommendations %}
-    <div class="col-md-6 col-xl-4">
+    <div class="col-md-6 col-lg-4">
         <div class="card shadow-sm recommendation-card">
             <div class="card-body">
                 <h6 class="text-muted mb-1">{{ rec.algorithm_label }}</h6>
-                <h5 class="card-title">推荐 #{{ forloop.counter }}</h5>
+                <h5 class="card-title">
+                    {% if lang == 'en' %}Recommendation #{{ forloop.counter }}{% else %}推荐 #{{ forloop.counter }}{% endif %}
+                </h5>
                 <p class="small text-muted mb-2">{{ rec.algorithm_summary }}</p>
                 <div class="numbers-display mb-2">
                     {% for n in rec.numbers %}
                         <span class="badge rounded-pill bg-primary">{{ n }}</span>
                     {% endfor %}
                 </div>
-                <p class="small text-muted mb-2">奇偶比 {{ rec.odd_count }}:{{ rec.even_count }} | 大小比 {{ rec.small_count }}:{{ rec.large_count }} | 和值 {{ rec.total_sum }}</p>
+                <p class="small text-muted mb-2">
+                    {% if lang == 'en' %}
+                        Odd/Even {{ rec.odd_count }}:{{ rec.even_count }} | Low/High {{ rec.small_count }}:{{ rec.large_count }} | Sum {{ rec.total_sum }}
+                    {% else %}
+                        奇偶比 {{ rec.odd_count }}:{{ rec.even_count }} | 大小比 {{ rec.small_count }}:{{ rec.large_count }} | 和值 {{ rec.total_sum }}
+                    {% endif %}
+                </p>
                 <ul class="small">
                     {% for line in rec.explanation %}
                         <li>{{ line }}</li>
                     {% endfor %}
                 </ul>
-                <button class="btn btn-outline-secondary btn-sm copy-btn" data-numbers="{{ rec.numbers|join:' ' }}">一键复制</button>
+                <button
+                    class="btn btn-outline-secondary btn-sm copy-btn"
+                    data-numbers="{{ rec.numbers|join:' ' }}"
+                    data-copy-label="{% if lang == 'en' %}Copy{% else %}一键复制{% endif %}"
+                    data-copied-label="{% if lang == 'en' %}Copied{% else %}已复制{% endif %}"
+                >
+                    {% if lang == 'en' %}Copy{% else %}一键复制{% endif %}
+                </button>
             </div>
         </div>
     </div>

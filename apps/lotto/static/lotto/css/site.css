@@ -1,19 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+:root {
+    --brand-navy: #0b2f4d;
+    --brand-blue: #0d4f8c;
+    --brand-teal: #0b8a78;
+    --brand-soft: #f3f6f8;
+    --card-shadow: 0 6px 18px rgba(11, 47, 77, 0.12);
+}
 
 body {
-    background: #f5f6f8;
-    font-family: "Noto Serif SC", "Source Han Serif SC", "Noto Serif", serif;
+    background: var(--brand-soft);
+    font-family: "Source Sans 3", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif;
+    color: #1b2b38;
 }
 
 .chart-card {
     background: #ffffff;
     border-radius: 0.75rem;
     padding: 1rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--card-shadow);
 }
 
 .hero-section {
-    background: linear-gradient(120deg, #0d6efd 0%, #20c997 100%);
+    background: linear-gradient(135deg, var(--brand-navy) 0%, var(--brand-blue) 55%, var(--brand-teal) 100%);
     color: #ffffff;
     border-radius: 1.25rem;
     padding: 2.5rem;
@@ -45,12 +54,12 @@ body {
     background: #ffffff;
     border-radius: 1rem;
     padding: 1.5rem;
-    box-shadow: 0 10px 30px rgba(13, 110, 253, 0.12);
+    box-shadow: var(--card-shadow);
     height: 100%;
 }
 
 .feature-card h6 {
-    color: #0d6efd;
+    color: var(--brand-blue);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-weight: 700;
@@ -73,6 +82,7 @@ body {
 .recommendation-card {
     border: 1px solid rgba(0, 0, 0, 0.05);
     height: 100%;
+    width: 100%;
 }
 
 .recommendation-card .card-body {
@@ -90,6 +100,54 @@ body {
     margin-bottom: 0.25rem;
 }
 
+.ai-heatmap {
+    display: grid;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.ai-cell {
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.35rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    border: 1px solid rgba(11, 47, 77, 0.08);
+    min-height: 64px;
+    font-weight: 600;
+}
+
+.ai-cell .ai-number {
+    font-size: 0.95rem;
+}
+
+.ai-cell .ai-prob {
+    font-size: 0.7rem;
+    opacity: 0.85;
+}
+
+@media (max-width: 768px) {
+    .ai-heatmap {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+
 .footer {
     font-size: 0.85rem;
+}
+
+.navbar {
+    background-color: var(--brand-navy) !important;
+}
+
+.btn-primary {
+    background-color: var(--brand-blue);
+    border-color: var(--brand-blue);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #0b4377;
+    border-color: #0b4377;
 }

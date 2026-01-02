@@ -6,16 +6,20 @@ from typing import Optional
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.utils import translation
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from .models import Draw, IngestionLog
+from .services.ai import predict_next_draw_probabilities
 from .services.analytics import compute_analysis, get_draws
 from .services.cache import AnalysisCache
 from .services.ingestion import ingest_draws
 from .services.recommender import build_recommendations
 
 cache = AnalysisCache()
+
+SUPPORTED_LANGS = {'zh', 'zh-hans', 'en'}
 
 
 def _parse_int(value: Optional[str], default: int) -> int:
@@ -34,7 +38,21 @@ def _parse_date(value: Optional[str]) -> Optional[datetime.date]:
         return None
 
 
+def _get_lang(request) -> str:
+    requested = request.GET.get('lang')
+    if requested in SUPPORTED_LANGS:
+        normalized = 'en' if requested == 'en' else 'zh'
+        request.session['lang'] = normalized
+
+    lang = request.session.get('lang', 'zh')
+    language_code = 'en' if lang == 'en' else 'zh-hans'
+    translation.activate(language_code)
+    request.LANGUAGE_CODE = language_code
+    return lang
+
+
 def home(request):
+    lang = _get_lang(request)
     latest_draw = Draw.objects.order_by('-date').first()
     latest_log = IngestionLog.objects.first()
     total_draws = Draw.objects.count()
@@ -42,16 +60,19 @@ def home(request):
         'latest_draw': latest_draw,
         'latest_log': latest_log,
         'total_draws': total_draws,
-        'disclaimer': _disclaimer_text(),
+        'disclaimer': _disclaimer_text(lang),
+        'lang': lang,
     }
     return render(request, 'lotto/home.html', context)
 
 
 def rules(request):
-    return render(request, 'lotto/rules.html', {'disclaimer': _disclaimer_text()})
+    lang = _get_lang(request)
+    return render(request, 'lotto/rules.html', {'disclaimer': _disclaimer_text(lang), 'lang': lang})
 
 
 def data_status(request):
+    lang = _get_lang(request)
     latest_draw = Draw.objects.order_by('-date').first()
     logs = IngestionLog.objects.all()[:10]
     recent_draws = Draw.objects.order_by('-date')[:15]
@@ -60,33 +81,49 @@ def data_status(request):
         'total_draws': Draw.objects.count(),
         'logs': logs,
         'recent_draws': recent_draws,
-        'disclaimer': _disclaimer_text(),
+        'disclaimer': _disclaimer_text(lang),
+        'lang': lang,
     }
     return render(request, 'lotto/data.html', context)
 
 
 def analysis(request):
+    lang = _get_lang(request)
     window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
     context = {
         'window_default': window_default,
-        'disclaimer': _disclaimer_text(),
+        'disclaimer': _disclaimer_text(lang),
+        'lang': lang,
     }
     return render(request, 'lotto/analysis.html', context)
 
 
+def ai_lab(request):
+    lang = _get_lang(request)
+    window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
+    context = {
+        'window_default': window_default,
+        'disclaimer': _disclaimer_text(lang),
+        'lang': lang,
+    }
+    return render(request, 'lotto/ai.html', context)
+
+
 def recommendations(request):
+    lang = _get_lang(request)
     window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
     seed = request.GET.get('seed')
     window = _parse_int(request.GET.get('window'), window_default)
     if window <= 0:
         window = None
     draws = get_draws(window=window)
-    recommendations_list = build_recommendations(draws, seed=seed)
+    recommendations_list = build_recommendations(draws, seed=seed, lang=lang)
     context = {
         'recommendations': recommendations_list,
         'seed': seed,
         'window': window,
-        'disclaimer': _disclaimer_text(),
+        'disclaimer': _disclaimer_text(lang),
+        'lang': lang,
     }
     return render(request, 'lotto/recommendations.html', context)
 
@@ -144,13 +181,14 @@ def api_analysis(request):
 
 
 def api_recommendations(request):
+    lang = _get_lang(request)
     window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
     seed = request.GET.get('seed')
     window = _parse_int(request.GET.get('window'), window_default)
     if window <= 0:
         window = None
     draws = get_draws(window=window)
-    recommendations_list = build_recommendations(draws, seed=seed)
+    recommendations_list = build_recommendations(draws, seed=seed, lang=lang)
 
     payload = []
     for rec in recommendations_list:
@@ -174,6 +212,35 @@ def api_recommendations(request):
         'seed': seed,
         'window': window,
         'recommendations': payload,
+    })
+
+
+def api_ai(request):
+    lang = _get_lang(request)
+    window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
+    seed = request.GET.get('seed') or settings.LOTTO_CONFIG.get('RECOMMENDATION_SEED')
+    window = _parse_int(request.GET.get('window'), window_default)
+    if window <= 0:
+        window = None
+
+    params = {
+        'window': window,
+        'seed': seed,
+    }
+
+    def compute():
+        draws = get_draws(window=window)
+        return predict_next_draw_probabilities(draws, seed=seed)
+
+    result = cache.get_or_set('ai', params, compute, ttl=60 * 30)
+
+    return JsonResponse({
+        'window': window,
+        'seed': seed,
+        'experimental': True,
+        'probabilities': result['probabilities'],
+        'top_numbers': result['top_numbers'],
+        'meta': result['meta'],
     })
 
 
@@ -208,7 +275,12 @@ def cron_ingest(request):
     })
 
 
-def _disclaimer_text() -> str:
+def _disclaimer_text(lang: str) -> str:
+    if lang == 'en':
+        return (
+            'Disclaimer: Lottery results are random. Recommendations do not guarantee winnings. '
+            'This site is for statistical learning and visualization only and is not gambling advice.'
+        )
     return (
         '免责声明：彩票结果具有随机性，任何推荐不保证中奖。'
         '本网站仅用于统计学习与可视化展示，不构成博彩建议。'

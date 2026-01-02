@@ -1,15 +1,15 @@
 {% extends 'lotto/base.html' %}
 
-{% block title %}数据状态 | MaxOracle{% endblock %}
+{% block title %}{% if lang == 'en' %}Data Status | MaxOracle{% else %}数据状态 | MaxOracle{% endif %}{% endblock %}
 
 {% block content %}
-<h2 class="mb-3">数据状态</h2>
+<h2 class="mb-3">{% if lang == 'en' %}Data Status{% else %}数据状态{% endif %}</h2>
 
 <div class="row g-4">
     <div class="col-lg-4">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h6 class="card-title">已抓取期数</h6>
+                <h6 class="card-title">{% if lang == 'en' %}Draws Collected{% else %}已抓取期数{% endif %}</h6>
                 <p class="display-6 mb-0">{{ total_draws }}</p>
             </div>
         </div>
@@ -17,63 +17,63 @@
     <div class="col-lg-8">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h6 class="card-title">最近一期</h6>
+                <h6 class="card-title">{% if lang == 'en' %}Latest Draw{% else %}最近一期{% endif %}</h6>
                 {% if latest_draw %}
-                    <p class="mb-1"><strong>日期：</strong>{{ latest_draw.date }}</p>
-                    <p class="mb-0"><strong>号码：</strong>{{ latest_draw.numbers|join:' ' }} + Bonus {{ latest_draw.bonus }}</p>
+                    <p class="mb-1"><strong>{% if lang == 'en' %}Date:{% else %}日期：{% endif %}</strong>{{ latest_draw.date|date:"DATE_FORMAT" }}</p>
+                    <p class="mb-0"><strong>{% if lang == 'en' %}Numbers:{% else %}号码：{% endif %}</strong>{{ latest_draw.numbers|join:' ' }} + Bonus {{ latest_draw.bonus }}</p>
                 {% else %}
-                    <p class="text-muted">暂无开奖数据。</p>
+                    <p class="text-muted">{% if lang == 'en' %}No draw data yet.{% else %}暂无开奖数据。{% endif %}</p>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<h4 class="mt-4">最近开奖</h4>
+<h4 class="mt-4">{% if lang == 'en' %}Recent Draws{% else %}最近开奖{% endif %}</h4>
 <div class="table-responsive">
     <table class="table table-sm table-striped">
         <thead>
             <tr>
-                <th>日期</th>
-                <th>主号</th>
+                <th>{% if lang == 'en' %}Date{% else %}日期{% endif %}</th>
+                <th>{% if lang == 'en' %}Main Numbers{% else %}主号{% endif %}</th>
                 <th>Bonus</th>
             </tr>
         </thead>
         <tbody>
             {% for draw in recent_draws %}
             <tr>
-                <td>{{ draw.date }}</td>
+                <td>{{ draw.date|date:"DATE_FORMAT" }}</td>
                 <td>{{ draw.numbers|join:' ' }}</td>
                 <td>{{ draw.bonus }}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="3" class="text-muted">暂无数据</td></tr>
+            <tr><td colspan="3" class="text-muted">{% if lang == 'en' %}No data{% else %}暂无数据{% endif %}</td></tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 
-<h4 class="mt-4">导入日志</h4>
+<h4 class="mt-4">{% if lang == 'en' %}Ingestion Logs{% else %}导入日志{% endif %}</h4>
 <div class="table-responsive">
     <table class="table table-sm table-bordered">
         <thead>
             <tr>
-                <th>时间</th>
-                <th>状态</th>
-                <th>来源</th>
-                <th>信息</th>
+                <th>{% if lang == 'en' %}Time{% else %}时间{% endif %}</th>
+                <th>{% if lang == 'en' %}Status{% else %}状态{% endif %}</th>
+                <th>{% if lang == 'en' %}Source{% else %}来源{% endif %}</th>
+                <th>{% if lang == 'en' %}Message{% else %}信息{% endif %}</th>
             </tr>
         </thead>
         <tbody>
             {% for log in logs %}
             <tr>
-                <td>{{ log.run_at }}</td>
+                <td>{{ log.run_at|date:"DATETIME_FORMAT" }}</td>
                 <td>{{ log.status }}</td>
                 <td>{{ log.source }}</td>
                 <td>{{ log.message }}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="4" class="text-muted">暂无日志</td></tr>
+            <tr><td colspan="4" class="text-muted">{% if lang == 'en' %}No logs{% else %}暂无日志{% endif %}</td></tr>
             {% endfor %}
         </tbody>
     </table>

@@ -1,4 +1,8 @@
 const form = document.getElementById('analysis-filter');
+const i18n = window.ANALYSIS_I18N || {};
+const mainLabel = i18n.mainLabel || '主号频次';
+const bonusLabel = i18n.bonusLabel || 'Bonus 频次';
+const distributionLabel = i18n.distributionLabel || '分布';
 let charts = {};
 
 function buildBarChart(ctx, labels, data, label) {
@@ -49,7 +53,7 @@ function buildHistogramChart(ctx, labels, data) {
         data: {
             labels: labels,
             datasets: [{
-                label: '分布',
+                label: distributionLabel,
                 data: data,
                 backgroundColor: 'rgba(25, 135, 84, 0.6)',
             }],
@@ -80,8 +84,8 @@ function updateCharts(payload) {
     if (charts.rolling) charts.rolling.destroy();
     if (charts.sum) charts.sum.destroy();
 
-    charts.main = buildBarChart(document.getElementById('mainFrequencyChart'), mainLabels, mainData, '主号频次');
-    charts.bonus = buildBarChart(document.getElementById('bonusFrequencyChart'), bonusLabels, bonusData, 'Bonus 频次');
+    charts.main = buildBarChart(document.getElementById('mainFrequencyChart'), mainLabels, mainData, mainLabel);
+    charts.bonus = buildBarChart(document.getElementById('bonusFrequencyChart'), bonusLabels, bonusData, bonusLabel);
     charts.rolling = buildLineChart(document.getElementById('rollingChart'), rollingLabels, rollingSeries);
     charts.sum = buildHistogramChart(document.getElementById('sumDistributionChart'), sumLabels, sumData);
 }

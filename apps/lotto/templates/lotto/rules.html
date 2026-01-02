@@ -1,8 +1,55 @@
 {% extends 'lotto/base.html' %}
 
-{% block title %}规则介绍 | MaxOracle{% endblock %}
+{% block title %}{% if lang == 'en' %}Rules | MaxOracle{% else %}规则介绍 | MaxOracle{% endif %}{% endblock %}
 
 {% block content %}
+{% if lang == 'en' %}
+<h2 class="mb-3">Lotto Max Rules (OLG)</h2>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Main Draw and Bonus</h5>
+        <ul>
+            <li>Each draw selects 7 main numbers plus 1 Bonus number from 1–50. All 8 numbers are unique.</li>
+            <li>Players choose 7 main numbers; the Bonus is drawn by the system for prize tier evaluation.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Prize Tiers and “+” Meaning</h5>
+        <p>“+” means the Bonus number is matched. For example, “6/7 + Bonus” means 6 main numbers plus the Bonus.</p>
+        <ul>
+            <li>7/7</li>
+            <li>6/7 + Bonus</li>
+            <li>6/7</li>
+            <li>5/7 + Bonus</li>
+            <li>5/7</li>
+            <li>4/7 + Bonus</li>
+            <li>4/7</li>
+            <li>3/7 + Bonus</li>
+            <li>3/7</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">$5 Play and Analysis Unit</h5>
+        <p>A $5 play typically contains 3 selections. Each selection is 7 main numbers, which is the analysis unit used on this site.</p>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">MaxMillions</h5>
+        <p>MaxMillions is an extra draw triggered when the jackpot reaches a threshold, with different rules from the main draw.</p>
+        <p>We currently focus on the main draw and Bonus analysis; MaxMillions can be added later via configuration.</p>
+        <p class="text-muted mb-0">Note: rule text may vary by province. This site follows OLG rules and keeps data sources configurable.</p>
+    </div>
+</div>
+{% else %}
 <h2 class="mb-3">Lotto Max 规则介绍（OLG）</h2>
 
 <div class="card shadow-sm mb-4">
@@ -48,4 +95,5 @@
         <p class="text-muted mb-0">说明：不同省份的规则文本可能略有差异，本网站以 OLG 规则页面为主，并在代码中将数据源配置化。</p>
     </div>
 </div>
+{% endif %}
 {% endblock %}

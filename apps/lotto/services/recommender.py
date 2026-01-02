@@ -29,14 +29,19 @@ class Recommendation:
     algorithm_summary: str
 
 
+def _lang_text(lang: str, zh: str, en: str) -> str:
+    return en if lang == 'en' else zh
+
+
 def jaccard(a: set, b: set) -> float:
     return len(a & b) / max(len(a | b), 1)
 
 
 class RecommendationEngine:
-    def __init__(self, draws: List[Draw], seed: str | None = None):
+    def __init__(self, draws: List[Draw], seed: str | None = None, lang: str = 'zh'):
         self.draws = draws
         self.random = random.Random(seed)
+        self.lang = 'en' if lang == 'en' else 'zh'
         self.main_counts = Counter()
         for draw in draws:
             self.main_counts.update(draw.numbers)
@@ -114,20 +119,23 @@ class RecommendationEngine:
         self,
         numbers: List[int],
         algorithm: str,
-        algorithm_label: str,
-        summary: str,
+        algorithm_label: str | None = None,
+        summary: str | None = None,
         explanation: List[str] | None = None,
+        lang: str | None = None,
     ) -> Recommendation:
-        return self._build_recommendation(numbers, algorithm, algorithm_label, summary, explanation)
+        return self._build_recommendation(numbers, algorithm, algorithm_label, summary, explanation, lang)
 
     def _build_recommendation(
         self,
         numbers: List[int],
         algorithm: str = 'BalancedHotColdMix',
-        algorithm_label: str = '热冷平衡综合策略',
-        summary: str = '热冷平衡 + 结构约束 + 高频共现组合',
+        algorithm_label: str | None = None,
+        summary: str | None = None,
         explanation: List[str] | None = None,
+        lang: str | None = None,
     ) -> Recommendation:
+        lang = 'en' if (lang or self.lang) == 'en' else 'zh'
         odd_count = sum(1 for n in numbers if n % 2 == 1)
         even_count = 7 - odd_count
         small_count = sum(1 for n in numbers if n <= 25)
@@ -137,15 +145,39 @@ class RecommendationEngine:
         cold_count = sum(1 for n in numbers if n in self.cold_numbers)
         pair_boost = sum(1 for pair in self.common_pairs if set(pair).issubset(numbers))
 
+        if algorithm_label is None:
+            algorithm_label = _lang_text(lang, '热冷平衡综合策略', 'Balanced Hot/Cold Mix')
+        if summary is None:
+            summary = _lang_text(
+                lang,
+                '热冷平衡 + 结构约束 + 高频共现组合',
+                'Hot/cold balance + structure constraints + common pairs',
+            )
         if explanation is None:
             explanation = [
-                f"热号 {hot_count} 个 + 冷号 {cold_count} 个的平衡组合",
-                f"奇偶比 {odd_count}:{even_count} 接近历史常见区间",
-                f"大小比 {small_count}:{large_count} 与历史分布一致",
-                f"和值 {total_sum} 落在常见区间 {self.sum_range[0]}-{self.sum_range[1]}",
+                _lang_text(
+                    lang,
+                    f"热号 {hot_count} 个 + 冷号 {cold_count} 个的平衡组合",
+                    f"Balanced {hot_count} hot + {cold_count} cold numbers",
+                ),
+                _lang_text(
+                    lang,
+                    f"奇偶比 {odd_count}:{even_count} 接近历史常见区间",
+                    f"Odd-even ratio {odd_count}:{even_count} within typical range",
+                ),
+                _lang_text(
+                    lang,
+                    f"大小比 {small_count}:{large_count} 与历史分布一致",
+                    f"Low-high ratio {small_count}:{large_count} matches history",
+                ),
+                _lang_text(
+                    lang,
+                    f"和值 {total_sum} 落在常见区间 {self.sum_range[0]}-{self.sum_range[1]}",
+                    f"Sum {total_sum} within typical band {self.sum_range[0]}-{self.sum_range[1]}",
+                ),
             ]
             if pair_boost:
-                explanation.append("包含历史高共现号码对")
+                explanation.append(_lang_text(lang, '包含历史高共现号码对', 'Includes historically common pairs'))
 
         return Recommendation(
             numbers=numbers,
@@ -164,11 +196,12 @@ class RecommendationEngine:
         )
 
 
-def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Recommendation]:
+def build_recommendations(draws: List[Draw], seed: str | None = None, lang: str = 'zh') -> List[Recommendation]:
     if not draws:
         return []
 
-    engine = RecommendationEngine(draws, seed=seed)
+    lang = 'en' if lang == 'en' else 'zh'
+    engine = RecommendationEngine(draws, seed=seed, lang=lang)
     recommendations: List[Recommendation] = []
 
     balanced = engine.generate(count=1)
@@ -181,11 +214,11 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             freq_numbers,
             algorithm='PureFrequencyTop7',
-            algorithm_label='高频直选 Top7',
-            summary='仅按历史出现频率取前 7 个号码',
+            algorithm_label=_lang_text(lang, '高频直选 Top7', 'Pure Frequency Top 7'),
+            summary=_lang_text(lang, '仅按历史出现频率取前 7 个号码', 'Top 7 by historical frequency only'),
             explanation=[
-                '统计所有历史主号出现次数，按频次降序取前 7 个',
-                '不做平滑、结构约束或随机扰动',
+                _lang_text(lang, '统计所有历史主号出现次数，按频次降序取前 7 个', 'Count main-number frequencies and take the top 7'),
+                _lang_text(lang, '不做平滑、结构约束或随机扰动', 'No smoothing, structure constraints, or randomization'),
             ],
         )
     )
@@ -200,11 +233,11 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             alg1_ticket,
             algorithm='BayesianSmoothedNumberProbabilities_Dirichlet',
-            algorithm_label='Dirichlet 平滑概率',
-            summary='Dirichlet 平滑后验概率抽样',
+            algorithm_label=_lang_text(lang, 'Dirichlet 平滑概率', 'Dirichlet Smoothed Probabilities'),
+            summary=_lang_text(lang, 'Dirichlet 平滑后验概率抽样', 'Sample from Dirichlet-smoothed posteriors'),
             explanation=[
-                '用 Dirichlet 先验平滑频次，得到后验概率',
-                '按后验概率进行无放回抽样生成号码',
+                _lang_text(lang, '用 Dirichlet 先验平滑频次，得到后验概率', 'Apply a Dirichlet prior to smooth frequencies'),
+                _lang_text(lang, '按后验概率进行无放回抽样生成号码', 'Sample without replacement using posterior weights'),
             ],
         )
     )
@@ -216,11 +249,11 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             sorted(alg2_ticket),
             algorithm='SingleNumberSignificanceTest_BinomialZ',
-            algorithm_label='二项显著性 Z 分数',
-            summary='二项分布 z-score 最高的号码',
+            algorithm_label=_lang_text(lang, '二项显著性 Z 分数', 'Binomial Z-Score Significance'),
+            summary=_lang_text(lang, '二项分布 z-score 最高的号码', 'Top numbers by binomial z-score'),
             explanation=[
-                '计算每个号码的出现次数与理论期望的 z-score',
-                '选取 z-score 最高的 7 个号码（偏高频显著）',
+                _lang_text(lang, '计算每个号码的出现次数与理论期望的 z-score', 'Compute z-scores vs. theoretical expectation'),
+                _lang_text(lang, '选取 z-score 最高的 7 个号码（偏高频显著）', 'Pick the 7 highest z-scores (significantly high frequency)'),
             ],
         )
     )
@@ -232,11 +265,11 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             sorted(alg3_ticket),
             algorithm='WindowedBayesianHotness_EWMA',
-            algorithm_label='EWMA 近期热度',
-            summary='滑动窗口 + EWMA 的近期热度',
+            algorithm_label=_lang_text(lang, 'EWMA 近期热度', 'EWMA Recent Hotness'),
+            summary=_lang_text(lang, '滑动窗口 + EWMA 的近期热度', 'Windowed Bayesian + EWMA recency score'),
             explanation=[
-                '在最近窗口内做 Dirichlet 平滑',
-                '对窗口概率做 EWMA 更新，强调近期走势',
+                _lang_text(lang, '在最近窗口内做 Dirichlet 平滑', 'Apply Dirichlet smoothing within a rolling window'),
+                _lang_text(lang, '对窗口概率做 EWMA 更新，强调近期走势', 'EWMA update emphasizes recent trends'),
             ],
         )
     )
@@ -247,11 +280,11 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             sorted(alg4_ticket),
             algorithm='FeatureDistributionTest_MonteCarlo',
-            algorithm_label='Monte Carlo 特征匹配',
-            summary='Monte Carlo 选择特征分布最接近历史的组合',
+            algorithm_label=_lang_text(lang, 'Monte Carlo 特征匹配', 'Monte Carlo Feature Match'),
+            summary=_lang_text(lang, 'Monte Carlo 选择特征分布最接近历史的组合', 'Pick tickets whose features match history'),
             explanation=[
-                '模拟大量随机票，计算和值/奇偶/大小/连号等特征',
-                '选择特征最接近历史分布的组合',
+                _lang_text(lang, '模拟大量随机票，计算和值/奇偶/大小/连号等特征', 'Simulate many tickets and compute feature stats'),
+                _lang_text(lang, '选择特征最接近历史分布的组合', 'Choose the ticket closest to historical distributions'),
             ],
         )
     )
@@ -262,11 +295,11 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             sorted(alg5_ticket),
             algorithm='AntiCrowdNumberSelection_PopularityPenalty',
-            algorithm_label='反热门防撞号',
-            summary='降低撞号概率的反热门组合',
+            algorithm_label=_lang_text(lang, '反热门防撞号', 'Anti-Crowd Selection'),
+            summary=_lang_text(lang, '降低撞号概率的反热门组合', 'Reduce shared picks with popularity penalties'),
             explanation=[
-                '惩罚生日号偏多、连号、尾号集中、等差数列等模式',
-                '在大量候选中选择惩罚分最低的组合',
+                _lang_text(lang, '惩罚生日号偏多、连号、尾号集中、等差数列等模式', 'Penalize birthday-heavy, consecutive, same-tail, and patterned sets'),
+                _lang_text(lang, '在大量候选中选择惩罚分最低的组合', 'Choose the lowest-penalty ticket from many candidates'),
             ],
         )
     )
@@ -278,11 +311,11 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             sorted(alg6_ticket),
             algorithm='ChangePointDetection_NumberFrequencies',
-            algorithm_label='变点检测分段概率',
-            summary='变点检测后，使用最新区段概率',
+            algorithm_label=_lang_text(lang, '变点检测分段概率', 'Change-Point Segment Probabilities'),
+            summary=_lang_text(lang, '变点检测后，使用最新区段概率', 'Use smoothed probabilities from the latest segment'),
             explanation=[
-                '用变点检测把历史分段，取最新段的平滑概率',
-                '按该段概率排序选取 7 个号码',
+                _lang_text(lang, '用变点检测把历史分段，取最新段的平滑概率', 'Segment history via change-point detection'),
+                _lang_text(lang, '按该段概率排序选取 7 个号码', 'Select 7 numbers from the latest segment ranking'),
             ],
         )
     )
@@ -293,11 +326,11 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             sorted(alg7_ticket),
             algorithm='WeightedSamplingWithoutReplacement_TicketGenerator',
-            algorithm_label='加权无放回抽样',
-            summary='基于权重的无放回抽样生成',
+            algorithm_label=_lang_text(lang, '加权无放回抽样', 'Weighted Sampling (No Replacement)'),
+            summary=_lang_text(lang, '基于权重的无放回抽样生成', 'Sample without replacement from weighted scores'),
             explanation=[
-                '使用 EWMA 权重进行无放回抽样',
-                '保持随机性同时体现权重偏好',
+                _lang_text(lang, '使用 EWMA 权重进行无放回抽样', 'Use EWMA weights for sampling'),
+                _lang_text(lang, '保持随机性同时体现权重偏好', 'Keeps randomness while reflecting weights'),
             ],
         )
     )
