@@ -1,0 +1,24 @@
+body {
+    background: #f5f6f8;
+}
+
+.chart-card {
+    background: #ffffff;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.recommendation-card {
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.numbers-display .badge {
+    font-size: 0.95rem;
+    margin-right: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.footer {
+    font-size: 0.85rem;
+}

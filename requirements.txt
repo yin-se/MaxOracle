@@ -1,0 +1,9 @@
+Django>=4.2,<5.1
+requests
+beautifulsoup4
+python-dateutil
+dj-database-url
+psycopg2-binary
+whitenoise
+gunicorn
+playwright

@@ -1,0 +1,36 @@
+{% extends 'lotto/base.html' %}
+{% load static %}
+
+{% block title %}推荐号码 | MaxOracle{% endblock %}
+
+{% block content %}
+<h2 class="mb-3">推荐号码（5 组）</h2>
+
+<div class="row g-4">
+    {% for rec in recommendations %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card shadow-sm recommendation-card">
+            <div class="card-body">
+                <h5 class="card-title">推荐 #{{ forloop.counter }}</h5>
+                <div class="numbers-display mb-2">
+                    {% for n in rec.numbers %}
+                        <span class="badge rounded-pill bg-primary">{{ n }}</span>
+                    {% endfor %}
+                </div>
+                <p class="small text-muted mb-2">奇偶比 {{ rec.odd_count }}:{{ rec.even_count }} | 大小比 {{ rec.small_count }}:{{ rec.large_count }} | 和值 {{ rec.total_sum }}</p>
+                <ul class="small">
+                    {% for line in rec.explanation %}
+                        <li>{{ line }}</li>
+                    {% endfor %}
+                </ul>
+                <button class="btn btn-outline-secondary btn-sm copy-btn" data-numbers="{{ rec.numbers|join:' ' }}">一键复制</button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'lotto/js/recommendations.js' %}"></script>
+{% endblock %}

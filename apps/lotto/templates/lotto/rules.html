@@ -1,0 +1,51 @@
+{% extends 'lotto/base.html' %}
+
+{% block title %}规则介绍 | MaxOracle{% endblock %}
+
+{% block content %}
+<h2 class="mb-3">Lotto Max 规则介绍（OLG）</h2>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">主抽奖（Main Draw）与 Bonus</h5>
+        <ul>
+            <li>每期从 1–50 中随机开出 7 个主号 + 1 个 Bonus 号，共 8 个号码，且互不重复。</li>
+            <li>玩家只选择 7 个主号，Bonus 号由系统抽出，仅用于中奖类别判定。</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">中奖类别与“+”含义</h5>
+        <p>“+” 表示命中 Bonus 号。例如 “6/7+Bonus” 表示命中 6 个主号且 Bonus 号也命中。</p>
+        <ul>
+            <li>7/7</li>
+            <li>6/7 + Bonus</li>
+            <li>6/7</li>
+            <li>5/7 + Bonus</li>
+            <li>5/7</li>
+            <li>4/7 + Bonus</li>
+            <li>4/7</li>
+            <li>3/7 + Bonus</li>
+            <li>3/7</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">$5 Play 与分析单位</h5>
+        <p>一张 $5 play 通常包含 3 组（3 selections）号码，每组为 7 个主号。本网站以“每组 7 个号码”为统计与推荐的基本分析单位。</p>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">MaxMillions 说明</h5>
+        <p>MaxMillions 是在主奖池达到门槛后触发的额外抽奖，规则与主抽奖不同。</p>
+        <p>当前版本先聚焦主抽奖与 Bonus 的统计分析，后续可通过配置扩展 MaxMillions 数据源。</p>
+        <p class="text-muted mb-0">说明：不同省份的规则文本可能略有差异，本网站以 OLG 规则页面为主，并在代码中将数据源配置化。</p>
+    </div>
+</div>
+{% endblock %}
