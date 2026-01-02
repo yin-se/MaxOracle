@@ -1,5 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
+
 body {
     background: #f5f6f8;
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Noto Serif", serif;
 }
 
 .chart-card {
@@ -7,6 +10,51 @@ body {
     border-radius: 0.75rem;
     padding: 1rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.hero-section {
+    background: linear-gradient(120deg, #0d6efd 0%, #20c997 100%);
+    color: #ffffff;
+    border-radius: 1.25rem;
+    padding: 2.5rem;
+    overflow: hidden;
+}
+
+.hero-section .lead {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.hero-card {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    backdrop-filter: blur(6px);
+}
+
+.feature-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(13, 110, 253, 0.12);
+    height: 100%;
+}
+
+.feature-card h6 {
+    color: #0d6efd;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    font-size: 0.75rem;
+}
+
+.pill-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
 }
 
 .recommendation-card {

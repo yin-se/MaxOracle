@@ -1,9 +1,82 @@
 {% extends 'lotto/base.html' %}
+{% load static %}
 
 {% block title %}主页 | MaxOracle{% endblock %}
 
 {% block content %}
-<div class="row g-4">
+<div class="hero-section mb-5">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <span class="pill-badge">OLG Lotto Max 数据分析</span>
+            <h1 class="display-5 fw-bold mt-3">Lotto Max 是什么？</h1>
+            <p class="lead mt-3 mb-4">
+                Lotto Max 是加拿大热门乐透游戏之一，每期从 1–50 中抽出 7 个主号和 1 个 Bonus 号。
+                本站聚焦历史数据统计、可视化趋势与结构分析，帮助你更系统地理解号码分布。
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-light text-primary fw-bold" href="/analysis/">进入分析</a>
+                <a class="btn btn-outline-light" href="/recommendations/">查看推荐</a>
+                <a class="btn btn-outline-light" href="/rules/">游戏规则</a>
+            </div>
+            <div class="row mt-4 g-3">
+                <div class="col-md-4">
+                    <div class="hero-card">
+                        <div class="small text-uppercase">已抓取期数</div>
+                        <div class="fs-4 fw-bold">{{ total_draws }}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="hero-card">
+                        <div class="small text-uppercase">最近一期</div>
+                        <div class="fw-bold">{{ latest_draw.date|default:'暂无数据' }}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="hero-card">
+                        <div class="small text-uppercase">数据来源</div>
+                        <div class="fw-bold">公开历史开奖</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5 text-center">
+            <img class="img-fluid shadow-lg rounded-4" src="{% static 'lotto/img/lotto-hero.svg' %}" alt="Lotto Max illustration">
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-lg-4">
+        <div class="feature-card">
+            <h6>规则速览</h6>
+            <h4 class="mt-2">Lotto Max 玩法</h4>
+            <p class="text-muted mb-0">
+                每期从 1–50 中随机开出 7 个主号与 1 个 Bonus 号。
+                常见中奖档位包含 7/7、6/7+Bonus、6/7 等。
+            </p>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="feature-card">
+            <h6>统计分析</h6>
+            <h4 class="mt-2">趋势与结构洞察</h4>
+            <p class="text-muted mb-0">
+                展示主号/Bonus 频次、冷热号码、遗漏期数、和值分布与连号比例，支持滚动窗口对比。
+            </p>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="feature-card">
+            <h6>策略推荐</h6>
+            <h4 class="mt-2">多算法输出</h4>
+            <p class="text-muted mb-0">
+                结合热冷平衡、概率平滑、近期热度与反热门策略输出号码建议，并明确算法依据。
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
     <div class="col-lg-6">
         <div class="card shadow-sm">
             <div class="card-body">
@@ -22,10 +95,9 @@
     <div class="col-lg-6">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h5 class="card-title">数据概览</h5>
-                <p class="mb-1"><strong>已抓取期数：</strong>{{ total_draws }}</p>
+                <h5 class="card-title">最近一期详情</h5>
                 {% if latest_draw %}
-                    <p class="mb-1"><strong>最近一期：</strong>{{ latest_draw.date }}</p>
+                    <p class="mb-1"><strong>开奖日期：</strong>{{ latest_draw.date }}</p>
                     <p class="mb-0"><strong>号码：</strong>{{ latest_draw.numbers|join:' ' }} + Bonus {{ latest_draw.bonus }}</p>
                 {% else %}
                     <p class="text-muted">暂无开奖数据。</p>
@@ -33,12 +105,5 @@
             </div>
         </div>
     </div>
-</div>
-
-<div class="mt-4 p-4 bg-light rounded">
-    <h4>快速入口</h4>
-    <p class="text-muted">查看历史数据分析、图表与推荐号码。</p>
-    <a class="btn btn-primary me-2" href="/analysis/">进入分析</a>
-    <a class="btn btn-outline-secondary" href="/recommendations/">查看推荐</a>
 </div>
 {% endblock %}
