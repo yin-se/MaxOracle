@@ -178,6 +178,29 @@ docker-compose up --build
 
 数据源可在 `maxoracle/settings.py` 的 `LOTTO_CONFIG` 中配置与扩展。
 
+## 部署（Railway）
+
+1) 在 Railway 创建项目并连接 GitHub 仓库 `yin-se/MaxOracle`  
+2) 添加 PostgreSQL 插件（Railway 会提供 `DATABASE_URL`）  
+3) 设置环境变量：
+   - `DJANGO_SECRET_KEY`（必填）
+   - `DJANGO_DEBUG=0`
+   - `DJANGO_ALLOWED_HOSTS=<你的 Railway 域名，例如 maxoracle.up.railway.app>`
+4) 在部署后运行一次数据库迁移（Railway 的 “Run command” 或 CLI）：
+
+```bash
+python manage.py migrate
+```
+
+5) （可选）首次导入数据：
+
+```bash
+python manage.py ingest_lottomax --since 2009-09-25 --source lotto8
+```
+
+6) Railway 默认会使用 `Procfile` 启动：  
+`gunicorn maxoracle.wsgi:application --bind 0.0.0.0:$PORT`
+
 ## 可扩展点
 
 - 添加更多数据源（实现新的 scraper 并注册）
