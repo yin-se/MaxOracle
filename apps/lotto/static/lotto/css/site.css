@@ -17,7 +17,7 @@ body {
     color: #ffffff;
     border-radius: 1.25rem;
     padding: 2.5rem;
-    overflow: hidden;
+    position: relative;
 }
 
 .hero-section .lead {
@@ -30,6 +30,14 @@ body {
     border-radius: 1rem;
     padding: 1rem 1.25rem;
     backdrop-filter: blur(6px);
+}
+
+.hero-illustration {
+    width: 100%;
+    max-width: 520px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
 }
 
 .feature-card {
