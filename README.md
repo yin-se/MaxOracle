@@ -123,6 +123,15 @@ crontab -e
 launchctl load -w ~/Library/LaunchAgents/com.maxoracle.ingest.plist
 ```
 
+### 定时任务（GitHub Actions）
+
+如果 Railway UI 没有 Cron Job，可以用 GitHub Actions 定时触发增量导入。
+
+1) 在 GitHub 仓库中设置 Secrets：
+   - `DATABASE_URL`（来自 Railway Postgres 插件）
+   - `DJANGO_SECRET_KEY`（同 Railway）
+2) 工作流文件已经在 `.github/workflows/ingest.yml`，默认在 UTC 每周三/六 05:00 运行。\n
+
 ### LotteryPost 数据源（可选）
 
 如果需要使用 LotteryPost（Cloudflare 保护），请先安装浏览器依赖：
