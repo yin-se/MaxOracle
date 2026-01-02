@@ -25,6 +25,7 @@ class Recommendation:
     pair_boost: int
     explanation: List[str]
     algorithm: str
+    algorithm_label: str
     algorithm_summary: str
 
 
@@ -113,15 +114,17 @@ class RecommendationEngine:
         self,
         numbers: List[int],
         algorithm: str,
+        algorithm_label: str,
         summary: str,
         explanation: List[str] | None = None,
     ) -> Recommendation:
-        return self._build_recommendation(numbers, algorithm, summary, explanation)
+        return self._build_recommendation(numbers, algorithm, algorithm_label, summary, explanation)
 
     def _build_recommendation(
         self,
         numbers: List[int],
         algorithm: str = 'BalancedHotColdMix',
+        algorithm_label: str = '热冷平衡综合策略',
         summary: str = '热冷平衡 + 结构约束 + 高频共现组合',
         explanation: List[str] | None = None,
     ) -> Recommendation:
@@ -156,6 +159,7 @@ class RecommendationEngine:
             pair_boost=pair_boost,
             explanation=explanation,
             algorithm=algorithm,
+            algorithm_label=algorithm_label,
             algorithm_summary=summary,
         )
 
@@ -177,6 +181,7 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             freq_numbers,
             algorithm='PureFrequencyTop7',
+            algorithm_label='高频直选 Top7',
             summary='仅按历史出现频率取前 7 个号码',
             explanation=[
                 '统计所有历史主号出现次数，按频次降序取前 7 个',
@@ -195,6 +200,7 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             alg1_ticket,
             algorithm='BayesianSmoothedNumberProbabilities_Dirichlet',
+            algorithm_label='Dirichlet 平滑概率',
             summary='Dirichlet 平滑后验概率抽样',
             explanation=[
                 '用 Dirichlet 先验平滑频次，得到后验概率',
@@ -210,6 +216,7 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             sorted(alg2_ticket),
             algorithm='SingleNumberSignificanceTest_BinomialZ',
+            algorithm_label='二项显著性 Z 分数',
             summary='二项分布 z-score 最高的号码',
             explanation=[
                 '计算每个号码的出现次数与理论期望的 z-score',
@@ -225,6 +232,7 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             sorted(alg3_ticket),
             algorithm='WindowedBayesianHotness_EWMA',
+            algorithm_label='EWMA 近期热度',
             summary='滑动窗口 + EWMA 的近期热度',
             explanation=[
                 '在最近窗口内做 Dirichlet 平滑',
@@ -239,6 +247,7 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             sorted(alg4_ticket),
             algorithm='FeatureDistributionTest_MonteCarlo',
+            algorithm_label='Monte Carlo 特征匹配',
             summary='Monte Carlo 选择特征分布最接近历史的组合',
             explanation=[
                 '模拟大量随机票，计算和值/奇偶/大小/连号等特征',
@@ -253,6 +262,7 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             sorted(alg5_ticket),
             algorithm='AntiCrowdNumberSelection_PopularityPenalty',
+            algorithm_label='反热门防撞号',
             summary='降低撞号概率的反热门组合',
             explanation=[
                 '惩罚生日号偏多、连号、尾号集中、等差数列等模式',
@@ -268,6 +278,7 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             sorted(alg6_ticket),
             algorithm='ChangePointDetection_NumberFrequencies',
+            algorithm_label='变点检测分段概率',
             summary='变点检测后，使用最新区段概率',
             explanation=[
                 '用变点检测把历史分段，取最新段的平滑概率',
@@ -282,6 +293,7 @@ def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Re
         engine.build_recommendation(
             sorted(alg7_ticket),
             algorithm='WeightedSamplingWithoutReplacement_TicketGenerator',
+            algorithm_label='加权无放回抽样',
             summary='基于权重的无放回抽样生成',
             explanation=[
                 '使用 EWMA 权重进行无放回抽样',

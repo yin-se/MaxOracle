@@ -166,6 +166,7 @@ def api_recommendations(request):
             'pair_boost': rec.pair_boost,
             'explanation': rec.explanation,
             'algorithm': rec.algorithm,
+            'algorithm_label': rec.algorithm_label,
             'algorithm_summary': rec.algorithm_summary,
         })
 
