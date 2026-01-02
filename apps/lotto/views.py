@@ -13,7 +13,7 @@ from .models import Draw, IngestionLog
 from .services.analytics import compute_analysis, get_draws
 from .services.cache import AnalysisCache
 from .services.ingestion import ingest_draws
-from .services.recommender import RecommendationEngine
+from .services.recommender import build_recommendations
 
 cache = AnalysisCache()
 
@@ -81,8 +81,7 @@ def recommendations(request):
     if window <= 0:
         window = None
     draws = get_draws(window=window)
-    engine = RecommendationEngine(draws, seed=seed)
-    recommendations_list = engine.generate(count=settings.LOTTO_CONFIG['RECOMMENDATION_COUNT'])
+    recommendations_list = build_recommendations(draws, seed=seed)
     context = {
         'recommendations': recommendations_list,
         'seed': seed,
@@ -150,11 +149,8 @@ def api_recommendations(request):
     window = _parse_int(request.GET.get('window'), window_default)
     if window <= 0:
         window = None
-    count = _parse_int(request.GET.get('count'), settings.LOTTO_CONFIG['RECOMMENDATION_COUNT'])
-
     draws = get_draws(window=window)
-    engine = RecommendationEngine(draws, seed=seed)
-    recommendations_list = engine.generate(count=count)
+    recommendations_list = build_recommendations(draws, seed=seed)
 
     payload = []
     for rec in recommendations_list:
@@ -169,6 +165,8 @@ def api_recommendations(request):
             'cold_count': rec.cold_count,
             'pair_boost': rec.pair_boost,
             'explanation': rec.explanation,
+            'algorithm': rec.algorithm,
+            'algorithm_summary': rec.algorithm_summary,
         })
 
     return JsonResponse({

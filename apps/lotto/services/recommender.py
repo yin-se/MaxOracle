@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import random
+import hashlib
+import math
 from collections import Counter
 from dataclasses import dataclass
 from itertools import combinations
@@ -22,6 +24,8 @@ class Recommendation:
     cold_count: int
     pair_boost: int
     explanation: List[str]
+    algorithm: str
+    algorithm_summary: str
 
 
 def jaccard(a: set, b: set) -> float:
@@ -105,7 +109,22 @@ class RecommendationEngine:
             return False
         return True
 
-    def _build_recommendation(self, numbers: List[int]) -> Recommendation:
+    def build_recommendation(
+        self,
+        numbers: List[int],
+        algorithm: str,
+        summary: str,
+        explanation: List[str] | None = None,
+    ) -> Recommendation:
+        return self._build_recommendation(numbers, algorithm, summary, explanation)
+
+    def _build_recommendation(
+        self,
+        numbers: List[int],
+        algorithm: str = 'BalancedHotColdMix',
+        summary: str = '热冷平衡 + 结构约束 + 高频共现组合',
+        explanation: List[str] | None = None,
+    ) -> Recommendation:
         odd_count = sum(1 for n in numbers if n % 2 == 1)
         even_count = 7 - odd_count
         small_count = sum(1 for n in numbers if n <= 25)
@@ -115,14 +134,15 @@ class RecommendationEngine:
         cold_count = sum(1 for n in numbers if n in self.cold_numbers)
         pair_boost = sum(1 for pair in self.common_pairs if set(pair).issubset(numbers))
 
-        explanation = [
-            f"热号 {hot_count} 个 + 冷号 {cold_count} 个的平衡组合",
-            f"奇偶比 {odd_count}:{7 - odd_count} 接近历史常见区间",
-            f"大小比 {small_count}:{7 - small_count} 与历史分布一致",
-            f"和值 {total_sum} 落在常见区间 {self.sum_range[0]}-{self.sum_range[1]}",
-        ]
-        if pair_boost:
-            explanation.append("包含历史高共现号码对")
+        if explanation is None:
+            explanation = [
+                f"热号 {hot_count} 个 + 冷号 {cold_count} 个的平衡组合",
+                f"奇偶比 {odd_count}:{even_count} 接近历史常见区间",
+                f"大小比 {small_count}:{large_count} 与历史分布一致",
+                f"和值 {total_sum} 落在常见区间 {self.sum_range[0]}-{self.sum_range[1]}",
+            ]
+            if pair_boost:
+                explanation.append("包含历史高共现号码对")
 
         return Recommendation(
             numbers=numbers,
@@ -135,7 +155,142 @@ class RecommendationEngine:
             cold_count=cold_count,
             pair_boost=pair_boost,
             explanation=explanation,
+            algorithm=algorithm,
+            algorithm_summary=summary,
         )
+
+
+def build_recommendations(draws: List[Draw], seed: str | None = None) -> List[Recommendation]:
+    if not draws:
+        return []
+
+    engine = RecommendationEngine(draws, seed=seed)
+    recommendations: List[Recommendation] = []
+
+    balanced = engine.generate(count=1)
+    if balanced:
+        recommendations.append(balanced[0])
+
+    counts = engine.main_counts
+    freq_numbers = _top_numbers(counts, 7)
+    recommendations.append(
+        engine.build_recommendation(
+            freq_numbers,
+            algorithm='PureFrequencyTop7',
+            summary='仅按历史出现频率取前 7 个号码',
+            explanation=[
+                '统计所有历史主号出现次数，按频次降序取前 7 个',
+                '不做平滑、结构约束或随机扰动',
+            ],
+        )
+    )
+
+    draw_numbers = _draw_numbers(draws)
+    rng = _seeded_random(seed, 'algorithms')
+
+    # Algorithm 1: Dirichlet smoothed probabilities
+    p_hat = _dirichlet_probabilities(draw_numbers, alpha=1.0)
+    alg1_ticket = _weighted_sample_without_replacement(p_hat, 7, rng)
+    recommendations.append(
+        engine.build_recommendation(
+            alg1_ticket,
+            algorithm='BayesianSmoothedNumberProbabilities_Dirichlet',
+            summary='Dirichlet 平滑后验概率抽样',
+            explanation=[
+                '用 Dirichlet 先验平滑频次，得到后验概率',
+                '按后验概率进行无放回抽样生成号码',
+            ],
+        )
+    )
+
+    # Algorithm 2: Binomial z-score
+    z_stats = _binomial_z_scores(draw_numbers)
+    alg2_ticket = [num for num, _ in sorted(z_stats.items(), key=lambda item: item[1], reverse=True)[:7]]
+    recommendations.append(
+        engine.build_recommendation(
+            sorted(alg2_ticket),
+            algorithm='SingleNumberSignificanceTest_BinomialZ',
+            summary='二项分布 z-score 最高的号码',
+            explanation=[
+                '计算每个号码的出现次数与理论期望的 z-score',
+                '选取 z-score 最高的 7 个号码（偏高频显著）',
+            ],
+        )
+    )
+
+    # Algorithm 3: Windowed Bayesian + EWMA
+    ewma_scores = _ewma_scores(draw_numbers, window=200, alpha=1.0, decay=0.2)
+    alg3_ticket = [num for num, _ in sorted(ewma_scores.items(), key=lambda item: item[1], reverse=True)[:7]]
+    recommendations.append(
+        engine.build_recommendation(
+            sorted(alg3_ticket),
+            algorithm='WindowedBayesianHotness_EWMA',
+            summary='滑动窗口 + EWMA 的近期热度',
+            explanation=[
+                '在最近窗口内做 Dirichlet 平滑',
+                '对窗口概率做 EWMA 更新，强调近期走势',
+            ],
+        )
+    )
+
+    # Algorithm 4: Feature distribution Monte Carlo
+    alg4_ticket = _feature_distribution_ticket(draw_numbers, rng)
+    recommendations.append(
+        engine.build_recommendation(
+            sorted(alg4_ticket),
+            algorithm='FeatureDistributionTest_MonteCarlo',
+            summary='Monte Carlo 选择特征分布最接近历史的组合',
+            explanation=[
+                '模拟大量随机票，计算和值/奇偶/大小/连号等特征',
+                '选择特征最接近历史分布的组合',
+            ],
+        )
+    )
+
+    # Algorithm 5: Anti-crowd selection
+    alg5_ticket = _anti_crowd_ticket(rng)
+    recommendations.append(
+        engine.build_recommendation(
+            sorted(alg5_ticket),
+            algorithm='AntiCrowdNumberSelection_PopularityPenalty',
+            summary='降低撞号概率的反热门组合',
+            explanation=[
+                '惩罚生日号偏多、连号、尾号集中、等差数列等模式',
+                '在大量候选中选择惩罚分最低的组合',
+            ],
+        )
+    )
+
+    # Algorithm 6: Change point detection
+    segment_probs = _change_point_segment_probabilities(draw_numbers)
+    alg6_ticket = [num for num, _ in sorted(segment_probs.items(), key=lambda item: item[1], reverse=True)[:7]]
+    recommendations.append(
+        engine.build_recommendation(
+            sorted(alg6_ticket),
+            algorithm='ChangePointDetection_NumberFrequencies',
+            summary='变点检测后，使用最新区段概率',
+            explanation=[
+                '用变点检测把历史分段，取最新段的平滑概率',
+                '按该段概率排序选取 7 个号码',
+            ],
+        )
+    )
+
+    # Algorithm 7: Weighted sampling without replacement
+    alg7_ticket = _weighted_sample_without_replacement(ewma_scores, 7, _seeded_random(seed, 'alg7'))
+    recommendations.append(
+        engine.build_recommendation(
+            sorted(alg7_ticket),
+            algorithm='WeightedSamplingWithoutReplacement_TicketGenerator',
+            summary='基于权重的无放回抽样生成',
+            explanation=[
+                '使用 EWMA 权重进行无放回抽样',
+                '保持随机性同时体现权重偏好',
+            ],
+        )
+    )
+
+    return recommendations
 
 
 def _mode(values: List[int]) -> int:
@@ -162,3 +317,236 @@ def _top_pairs(draws: List[Draw], top_n: int = 10) -> List[Tuple[int, int]]:
         for combo in combinations(sorted(draw.numbers), 2):
             counter[combo] += 1
     return [pair for pair, _ in counter.most_common(top_n)]
+
+
+def _top_numbers(counts: Counter, k: int) -> List[int]:
+    return [num for num, _ in counts.most_common(k)]
+
+
+def _draw_numbers(draws: List[Draw]) -> List[List[int]]:
+    ordered = sorted(draws, key=lambda d: d.date)
+    return [sorted(draw.numbers) for draw in ordered]
+
+
+def _seeded_random(seed: str | None, salt: str) -> random.Random:
+    if seed is None:
+        return random.Random()
+    payload = f"{seed}:{salt}".encode('utf-8')
+    digest = int.from_bytes(hashlib.sha256(payload).digest()[:8], 'big')
+    return random.Random(digest)
+
+
+def _dirichlet_probabilities(draws: List[List[int]], alpha: float = 1.0) -> dict[int, float]:
+    counts = Counter()
+    for draw in draws:
+        counts.update(draw)
+    total_events = len(draws) * 7
+    denom = total_events + 50 * alpha
+    return {i: (counts.get(i, 0) + alpha) / denom for i in range(1, 51)}
+
+
+def _binomial_z_scores(draws: List[List[int]]) -> dict[int, float]:
+    counts = Counter()
+    for draw in draws:
+        counts.update(draw)
+    total_draws = len(draws)
+    q = 7 / 50
+    expected = total_draws * q
+    variance = max(total_draws * q * (1 - q), 1e-9)
+    z_stats = {}
+    for i in range(1, 51):
+        z_stats[i] = (counts.get(i, 0) - expected) / (variance ** 0.5)
+    return z_stats
+
+
+def _ewma_scores(draws: List[List[int]], window: int, alpha: float, decay: float) -> dict[int, float]:
+    scores = {i: 1 / 50 for i in range(1, 51)}
+    counts = Counter()
+    window_draws: List[List[int]] = []
+
+    for draw in draws:
+        window_draws.append(draw)
+        counts.update(draw)
+        if len(window_draws) > window:
+            removed = window_draws.pop(0)
+            for n in removed:
+                counts[n] -= 1
+                if counts[n] <= 0:
+                    del counts[n]
+        total_events = len(window_draws) * 7
+        denom = total_events + 50 * alpha
+        for i in range(1, 51):
+            p_window = (counts.get(i, 0) + alpha) / denom
+            scores[i] = (1 - decay) * scores[i] + decay * p_window
+
+    return scores
+
+
+def _weighted_sample_without_replacement(weights: dict[int, float], k: int, rng: random.Random) -> List[int]:
+    keys = []
+    for num, weight in weights.items():
+        if weight <= 0:
+            continue
+        u = rng.random()
+        key = u ** (1.0 / weight)
+        keys.append((key, num))
+    keys.sort(reverse=True)
+    return sorted([num for _, num in keys[:k]])
+
+
+def _feature_distribution_ticket(draws: List[List[int]], rng: random.Random) -> List[int]:
+    features = [_extract_features(draw) for draw in draws]
+    means, stds = _feature_stats(features)
+
+    best_ticket = None
+    best_distance = float('inf')
+    for _ in range(3000):
+        ticket = sorted(rng.sample(range(1, 51), 7))
+        f = _extract_features(ticket)
+        distance = 0.0
+        for key in means:
+            std = stds[key] or 1.0
+            distance += abs((f[key] - means[key]) / std)
+        if distance < best_distance:
+            best_distance = distance
+            best_ticket = ticket
+    return best_ticket or sorted(rng.sample(range(1, 51), 7))
+
+
+def _anti_crowd_ticket(rng: random.Random) -> List[int]:
+    best_ticket = None
+    best_score = float('inf')
+    for _ in range(3000):
+        ticket = sorted(rng.sample(range(1, 51), 7))
+        score = _popularity_penalty(ticket)
+        if score < best_score:
+            best_score = score
+            best_ticket = ticket
+    return best_ticket or sorted(rng.sample(range(1, 51), 7))
+
+
+def _popularity_penalty(ticket: List[int]) -> float:
+    penalty = 0.0
+    count_low31 = sum(1 for n in ticket if n <= 31)
+    penalty += 1.5 * max(0, count_low31 - 3)
+
+    consec = sum(1 for a, b in zip(ticket, ticket[1:]) if b == a + 1)
+    penalty += 1.0 * consec
+
+    last_digits = [n % 10 for n in ticket]
+    max_dup = max(last_digits.count(d) for d in set(last_digits))
+    penalty += 1.0 * max(0, max_dup - 2)
+
+    if _is_arithmetic_progression(ticket):
+        penalty += 2.5
+
+    if sum(1 for n in ticket if n % 5 == 0) >= 4:
+        penalty += 1.5
+
+    return penalty
+
+
+def _is_arithmetic_progression(ticket: List[int]) -> bool:
+    if len(ticket) < 3:
+        return False
+    diffs = [b - a for a, b in zip(ticket, ticket[1:])]
+    return all(d == diffs[0] for d in diffs)
+
+
+def _extract_features(draw: List[int]) -> dict[str, float]:
+    sorted_draw = sorted(draw)
+    sumv = sum(sorted_draw)
+    odd = sum(1 for n in sorted_draw if n % 2 == 1)
+    small = sum(1 for n in sorted_draw if n <= 25)
+    consec = sum(1 for a, b in zip(sorted_draw, sorted_draw[1:]) if b == a + 1)
+    gaps = [b - a for a, b in zip(sorted_draw, sorted_draw[1:])]
+    gap_entropy = _entropy(gaps)
+    return {
+        'sum': sumv,
+        'odd': odd,
+        'small': small,
+        'consec': consec,
+        'gap_entropy': gap_entropy,
+    }
+
+
+def _feature_stats(features: List[dict[str, float]]) -> tuple[dict[str, float], dict[str, float]]:
+    keys = features[0].keys() if features else []
+    means = {}
+    stds = {}
+    for key in keys:
+        values = [f[key] for f in features]
+        mean = sum(values) / max(len(values), 1)
+        variance = sum((v - mean) ** 2 for v in values) / max(len(values), 1)
+        means[key] = mean
+        stds[key] = variance ** 0.5
+    return means, stds
+
+
+def _entropy(values: List[int]) -> float:
+    if not values:
+        return 0.0
+    counts = Counter(values)
+    total = sum(counts.values())
+    entropy = 0.0
+    for count in counts.values():
+        p = count / total
+        entropy -= p * (0.0 if p <= 0 else math.log(p))
+    return entropy
+
+
+def _change_point_segment_probabilities(draws: List[List[int]]) -> dict[int, float]:
+    if not draws:
+        return {i: 1 / 50 for i in range(1, 51)}
+    max_draws = min(len(draws), 600)
+    segment_draws = draws[-max_draws:]
+    n = len(segment_draws)
+    min_segment = 120 if n >= 240 else max(20, n // 4)
+    penalty = 150.0
+
+    prefix = [[0] * 51]
+    for draw in segment_draws:
+        prev = prefix[-1][:]
+        for nnum in draw:
+            prev[nnum] += 1
+        prefix.append(prev)
+
+    def segment_cost(start: int, end: int) -> float:
+        counts = [prefix[end][i] - prefix[start - 1][i] for i in range(1, 51)]
+        total = sum(counts)
+        epsilon = 1e-6
+        cost = 0.0
+        denom = total + 50 * epsilon
+        for count in counts:
+            if count == 0:
+                continue
+            p = (count + epsilon) / denom
+            cost -= count * math.log(p)
+        return cost
+
+    change_points: List[int] = []
+
+    def recurse(start: int, end: int):
+        if end - start + 1 < 2 * min_segment:
+            return
+        best_split = None
+        best_gain = 0.0
+        cost_full = segment_cost(start, end)
+        for split in range(start + min_segment, end - min_segment + 1):
+            cost_left = segment_cost(start, split)
+            cost_right = segment_cost(split + 1, end)
+            gain = cost_full - (cost_left + cost_right)
+            if gain > best_gain:
+                best_gain = gain
+                best_split = split
+        if best_split and best_gain > penalty:
+            change_points.append(best_split)
+            recurse(start, best_split)
+            recurse(best_split + 1, end)
+
+    recurse(1, n)
+    change_points.sort()
+
+    last_start = (change_points[-1] + 1) if change_points else 1
+    last_segment = segment_draws[last_start - 1 :]
+    return _dirichlet_probabilities(last_segment, alpha=1.0)

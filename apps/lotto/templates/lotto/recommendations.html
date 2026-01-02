@@ -11,7 +11,9 @@
     <div class="col-md-6 col-xl-4">
         <div class="card shadow-sm recommendation-card">
             <div class="card-body">
+                <h6 class="text-uppercase text-muted mb-1">{{ rec.algorithm }}</h6>
                 <h5 class="card-title">推荐 #{{ forloop.counter }}</h5>
+                <p class="small text-muted mb-2">{{ rec.algorithm_summary }}</p>
                 <div class="numbers-display mb-2">
                     {% for n in rec.numbers %}
                         <span class="badge rounded-pill bg-primary">{{ n }}</span>
