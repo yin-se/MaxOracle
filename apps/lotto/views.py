@@ -182,8 +182,12 @@ def api_recommendations(request):
 @require_http_methods(['GET', 'POST'])
 def cron_ingest(request):
     expected_token = settings.CRON_INGEST_TOKEN
+    auth_header = request.headers.get('Authorization', '')
+    bearer_token = auth_header.replace('Bearer ', '').replace('Token ', '').strip() if auth_header else ''
     token = (
         request.headers.get('X-CRON-TOKEN')
+        or request.headers.get('X-CRON-SECRET')
+        or bearer_token
         or request.GET.get('token')
         or request.POST.get('token')
     )

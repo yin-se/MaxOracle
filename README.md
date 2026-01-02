@@ -138,10 +138,11 @@ launchctl load -w ~/Library/LaunchAgents/com.maxoracle.ingest.plist
 
 1) 在 Railway 的 **Variables** 中为 web 服务新增 `CRON_INGEST_TOKEN`（随机字符串）。
 2) 在 **New → Template** 里选择 “Cron Webhook Trigger”。
-3) 配置模板变量：
-   - `BASE_URL`：你的 Railway 域名，例如 `https://web-production-57d02.up.railway.app`
-   - `CRON_TIMER`：`0 5 * * 3,6`
-   - `ENDPOINTS`：`['api/cron/ingest?token=YOUR_TOKEN']`
+3) 如果模板只显示 `ENDPOINT_URL` 和 `CRON_SECRET`：
+   - `CRON_SECRET`：保留默认生成的值（或手动填一个固定值）。
+   - `ENDPOINT_URL`：`https://<域名>/api/cron/ingest/`（不带 token 也可）。
+4) 在 web 服务的变量中设置 `CRON_INGEST_TOKEN` 与 `CRON_SECRET` 相同。
+5) 如果模板支持 `CRON_TIMER`，建议设置为 `0 5 * * 3,6`（UTC）。
 4) 保存并部署。
 
 该模板会定时访问你的应用接口，触发增量抓取。
