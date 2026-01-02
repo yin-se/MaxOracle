@@ -57,6 +57,10 @@ body {
     font-size: 0.75rem;
 }
 
+.recommendation-grid > [class*="col-"] {
+    display: flex;
+}
+
 .pill-badge {
     background: rgba(255, 255, 255, 0.18);
     border: 1px solid rgba(255, 255, 255, 0.35);
@@ -68,6 +72,16 @@ body {
 
 .recommendation-card {
     border: 1px solid rgba(0, 0, 0, 0.05);
+    height: 100%;
+}
+
+.recommendation-card .card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.recommendation-card .copy-btn {
+    margin-top: auto;
 }
 
 .numbers-display .badge {
