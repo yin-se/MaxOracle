@@ -132,6 +132,20 @@ launchctl load -w ~/Library/LaunchAgents/com.maxoracle.ingest.plist
    - `DJANGO_SECRET_KEY`（同 Railway）
 2) 工作流文件已经在 `.github/workflows/ingest.yml`，默认在 UTC 每周三/六 05:00 运行。\n
 
+### 定时任务（Railway 模板替代方案：Webhook Trigger）
+
+如果 Railway UI 只有模板列表，可以用 “Cron Webhook Trigger” 模板配合应用内的安全端点触发增量更新：
+
+1) 在 Railway 的 **Variables** 中为 web 服务新增 `CRON_INGEST_TOKEN`（随机字符串）。
+2) 在 **New → Template** 里选择 “Cron Webhook Trigger”。
+3) 配置模板变量：
+   - `BASE_URL`：你的 Railway 域名，例如 `https://web-production-57d02.up.railway.app`
+   - `CRON_TIMER`：`0 5 * * 3,6`
+   - `ENDPOINTS`：`['api/cron/ingest?token=YOUR_TOKEN']`
+4) 保存并部署。
+
+该模板会定时访问你的应用接口，触发增量抓取。
+
 ### LotteryPost 数据源（可选）
 
 如果需要使用 LotteryPost（Cloudflare 保护），请先安装浏览器依赖：

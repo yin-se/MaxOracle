@@ -6,10 +6,13 @@ from typing import Optional
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
 from .models import Draw, IngestionLog
 from .services.analytics import compute_analysis, get_draws
 from .services.cache import AnalysisCache
+from .services.ingestion import ingest_draws
 from .services.recommender import RecommendationEngine
 
 cache = AnalysisCache()
@@ -172,6 +175,33 @@ def api_recommendations(request):
         'seed': seed,
         'window': window,
         'recommendations': payload,
+    })
+
+
+@csrf_exempt
+@require_http_methods(['GET', 'POST'])
+def cron_ingest(request):
+    expected_token = settings.CRON_INGEST_TOKEN
+    token = (
+        request.headers.get('X-CRON-TOKEN')
+        or request.GET.get('token')
+        or request.POST.get('token')
+    )
+    if not expected_token:
+        return JsonResponse({'error': 'CRON_INGEST_TOKEN not configured'}, status=500)
+    if token != expected_token:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    source = request.GET.get('source') or request.POST.get('source') or 'lotto8'
+    try:
+        result = ingest_draws(incremental=True, source=source)
+    except Exception as exc:
+        return JsonResponse({'error': str(exc)}, status=500)
+
+    return JsonResponse({
+        'status': result['status'],
+        'draws_added': result['draws_added'],
+        'message': result['message'],
     })
 
 
