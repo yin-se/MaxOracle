@@ -10,12 +10,12 @@ from django.utils import translation
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from .models import Draw, IngestionLog
+from .models import Draw, IngestionLog, RecommendationSnapshot, AiPredictionSnapshot
 from .services.ai import predict_next_draw_probabilities
 from .services.analytics import compute_analysis, get_draws
 from .services.cache import AnalysisCache
 from .services.ingestion import ingest_draws
-from .services.recommender import build_recommendations
+from .services.recommender import build_recommendations, build_recommendation_snapshot_payload
 
 cache = AnalysisCache()
 
@@ -112,16 +112,70 @@ def ai_lab(request):
 def recommendations(request):
     lang = _get_lang(request)
     window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
-    seed = request.GET.get('seed')
+    seed = request.GET.get('seed') or settings.LOTTO_CONFIG.get('RECOMMENDATION_SEED')
     window = _parse_int(request.GET.get('window'), window_default)
-    if window <= 0:
-        window = None
-    draws = get_draws(window=window)
-    recommendations_list = build_recommendations(draws, seed=seed, lang=lang)
+    window_value = window if window > 0 else 0
+
+    latest_two = list(Draw.objects.order_by('-date')[:2])
+    latest_draw = latest_two[0] if latest_two else None
+    previous_draw = latest_two[1] if len(latest_two) > 1 else None
+    base_draw = previous_draw or latest_draw
+    base_draw_date = base_draw.date if base_draw else None
+    compare_draw = latest_draw if previous_draw else None
+
+    recommendations_list = []
+    snapshot = None
+    if base_draw_date:
+        seed_value = str(seed or f"auto:{base_draw_date.isoformat()}:{window_value}").strip()
+        snapshot = RecommendationSnapshot.objects.filter(
+            base_draw_date=base_draw_date,
+            window=window_value,
+            seed=seed_value,
+        ).first()
+        if snapshot is None:
+            draws = get_draws(window=window_value or None, end_date=base_draw_date)
+            payload = build_recommendation_snapshot_payload(draws, seed=seed_value)
+            snapshot = RecommendationSnapshot.objects.create(
+                base_draw_date=base_draw_date,
+                window=window_value,
+                seed=seed_value,
+                payload=payload,
+            )
+
+        for item in snapshot.payload:
+            texts = item.get('texts', {}).get('en' if lang == 'en' else 'zh', {})
+            metrics = item.get('metrics', {})
+            numbers = item.get('numbers', [])
+            match_count = None
+            bonus_hit = False
+            if compare_draw:
+                match_count = len(set(numbers) & set(compare_draw.numbers))
+                bonus_hit = compare_draw.bonus in numbers
+            recommendations_list.append({
+                'numbers': numbers,
+                'algorithm': item.get('algorithm'),
+                'algorithm_label': texts.get('label', ''),
+                'algorithm_summary': texts.get('summary', ''),
+                'explanation': texts.get('explanation', []),
+                'odd_count': metrics.get('odd_count', 0),
+                'even_count': metrics.get('even_count', 0),
+                'small_count': metrics.get('small_count', 0),
+                'large_count': metrics.get('large_count', 0),
+                'total_sum': metrics.get('total_sum', 0),
+                'hot_count': metrics.get('hot_count', 0),
+                'cold_count': metrics.get('cold_count', 0),
+                'pair_boost': metrics.get('pair_boost', 0),
+                'match_count': match_count,
+                'bonus_hit': bonus_hit,
+            })
+
     context = {
         'recommendations': recommendations_list,
         'seed': seed,
-        'window': window,
+        'window': window_value,
+        'latest_draw': latest_draw,
+        'base_draw_date': base_draw_date,
+        'compare_draw': compare_draw,
         'disclaimer': _disclaimer_text(lang),
         'lang': lang,
     }
@@ -220,24 +274,62 @@ def api_ai(request):
     window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
     seed = request.GET.get('seed') or settings.LOTTO_CONFIG.get('RECOMMENDATION_SEED')
     window = _parse_int(request.GET.get('window'), window_default)
-    if window <= 0:
-        window = None
+    window_value = window if window > 0 else 0
 
     params = {
-        'window': window,
+        'window': window_value,
         'seed': seed,
     }
 
-    def compute():
-        draws = get_draws(window=window)
-        return predict_next_draw_probabilities(draws, seed=seed)
+    latest_two = list(Draw.objects.order_by('-date')[:2])
+    latest_draw = latest_two[0] if latest_two else None
+    previous_draw = latest_two[1] if len(latest_two) > 1 else None
+    base_draw = previous_draw or latest_draw
+    base_draw_date = base_draw.date if base_draw else None
+    compare_draw = latest_draw if previous_draw else None
 
-    result = cache.get_or_set('ai', params, compute, ttl=60 * 30)
+    result = None
+    if base_draw_date:
+        seed_value = str(seed or f"auto:ai:{base_draw_date.isoformat()}:{window_value}").strip()
+        snapshot = AiPredictionSnapshot.objects.filter(
+            base_draw_date=base_draw_date,
+            window=window_value,
+            seed=seed_value,
+        ).first()
+        if snapshot is None:
+            draws = get_draws(window=window_value or None, end_date=base_draw_date)
+            payload = predict_next_draw_probabilities(draws, seed=seed_value)
+            snapshot = AiPredictionSnapshot.objects.create(
+                base_draw_date=base_draw_date,
+                window=window_value,
+                seed=seed_value,
+                payload=payload,
+            )
+        result = snapshot.payload
+
+    if result is None:
+        def compute():
+            draws = get_draws(window=window_value or None)
+            return predict_next_draw_probabilities(draws, seed=seed)
+
+        result = cache.get_or_set('ai', params, compute, ttl=60 * 30)
+
+    match_count = None
+    bonus_hit = False
+    if compare_draw:
+        match_count = len(set(result.get('top_numbers', [])) & set(compare_draw.numbers))
+        bonus_hit = compare_draw.bonus in set(result.get('top_numbers', []))
 
     return JsonResponse({
-        'window': window,
+        'window': window_value,
         'seed': seed,
         'experimental': True,
+        'base_draw_date': base_draw_date.isoformat() if base_draw_date else None,
+        'compare_draw_date': compare_draw.date.isoformat() if compare_draw else None,
+        'compare_draw_numbers': compare_draw.numbers if compare_draw else [],
+        'compare_draw_bonus': compare_draw.bonus if compare_draw else None,
+        'match_count': match_count,
+        'bonus_hit': bonus_hit,
         'probabilities': result['probabilities'],
         'top_numbers': result['top_numbers'],
         'meta': result['meta'],

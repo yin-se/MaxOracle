@@ -1,7 +1,7 @@
 from django.contrib import admin, messages
 from django.utils import timezone
 
-from .models import Draw, DrawNumber, IngestionLog
+from .models import Draw, DrawNumber, IngestionLog, RecommendationSnapshot, AiPredictionSnapshot
 from .services.ingestion import ingest_draws
 
 
@@ -44,3 +44,17 @@ class IngestionLogAdmin(admin.ModelAdmin):
         )
 
     trigger_incremental.short_description = 'Trigger incremental ingest'
+
+
+@admin.register(RecommendationSnapshot)
+class RecommendationSnapshotAdmin(admin.ModelAdmin):
+    list_display = ('base_draw_date', 'window', 'seed', 'created_at')
+    list_filter = ('base_draw_date', 'window')
+    search_fields = ('seed',)
+
+
+@admin.register(AiPredictionSnapshot)
+class AiPredictionSnapshotAdmin(admin.ModelAdmin):
+    list_display = ('base_draw_date', 'window', 'seed', 'created_at')
+    list_filter = ('base_draw_date', 'window')
+    search_fields = ('seed',)

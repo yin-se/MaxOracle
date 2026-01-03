@@ -1,6 +1,7 @@
 const form = document.getElementById('ai-filter');
 const heatmap = document.getElementById('ai-heatmap');
 const topContainer = document.getElementById('ai-top');
+const compareContainer = document.getElementById('ai-top-compare');
 const metaContainer = document.getElementById('ai-meta');
 const i18n = window.AI_I18N || {};
 
@@ -32,6 +33,25 @@ function renderTop(numbers) {
     });
 }
 
+function renderCompare(data) {
+    if (!compareContainer) return;
+    if (!data || !data.compare_draw_date) {
+        compareContainer.textContent = i18n.waiting || '';
+        return;
+    }
+    const dateLabel = new Date(data.compare_draw_date).toLocaleDateString();
+    const hitsLabel = (i18n.hitsLabel || 'Hits vs {date}:').replace('{date}', dateLabel);
+    const mainLabel = i18n.mainLabel || 'main';
+    const bonusLabel = i18n.bonusLabel || 'Bonus';
+    const yesLabel = i18n.yes || 'Yes';
+    const noLabel = i18n.no || 'No';
+    const matchCount = data.match_count ?? 0;
+    const bonusHit = data.bonus_hit;
+
+    compareContainer.innerHTML = `${hitsLabel} <span class="match-count">${matchCount}</span> ${mainLabel}, ${bonusLabel} ` +
+        `<span class="${bonusHit ? 'bonus-hit' : 'bonus-miss'}">${bonusHit ? yesLabel : noLabel}</span>`;
+}
+
 function renderMeta(meta) {
     if (!metaContainer || !meta) return;
     const template = i18n.meta || 'Draws: {draws}, Samples: {samples}, Hidden: {hidden}, Epochs: {epochs}';
@@ -52,6 +72,7 @@ function fetchAI(params = {}) {
         .then(data => {
             renderHeatmap(data.probabilities || []);
             renderTop(data.top_numbers || []);
+            renderCompare(data);
             renderMeta(data.meta || {});
         })
         .catch(err => console.error('ai error', err));

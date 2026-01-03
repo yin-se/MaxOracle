@@ -55,6 +55,7 @@
     <div class="card-body">
         <h5 class="card-title mb-3">{% if lang == 'en' %}Top 7 by Model Probability{% else %}模型概率 Top 7{% endif %}</h5>
         <div id="ai-top" class="numbers-display"></div>
+        <p id="ai-top-compare" class="small mb-2 match-line"></p>
         <p class="small text-muted mt-3 mb-0">
             {% if lang == 'en' %}
             These numbers reflect the model's highest estimated probabilities based on historical patterns.
@@ -62,6 +63,205 @@
             这些号码为模型估计概率最高的结果，仅用于展示模型输出。
             {% endif %}
         </p>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">{% if lang == 'en' %}How the AI Prediction Works{% else %}AI 预测逻辑说明{% endif %}</h5>
+        {% if lang == 'en' %}
+            <p class="text-muted">
+                We train a small neural network on recent draws to estimate the likelihood of each number appearing in
+                the next draw. This is a lightweight, interpretable demo model built for learning and visualization,
+                not a guarantee of prediction accuracy.
+            </p>
+            <div class="ai-diagram mb-3">
+                <svg viewBox="0 0 820 150" role="img" aria-label="AI prediction flow">
+                    <defs>
+                        <marker id="arrow-en" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
+                            <path d="M0,0 L6,3 L0,6" fill="#0d4f8c"/>
+                        </marker>
+                    </defs>
+                    <rect x="20" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <text x="105" y="58" text-anchor="middle" font-size="12">Recent draws</text>
+                    <text x="105" y="76" text-anchor="middle" font-size="12">(window N)</text>
+
+                    <rect x="230" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <text x="315" y="58" text-anchor="middle" font-size="12">50-dim</text>
+                    <text x="315" y="76" text-anchor="middle" font-size="12">multi-hot vector</text>
+
+                    <rect x="440" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <text x="525" y="58" text-anchor="middle" font-size="12">Small neural net</text>
+                    <text x="525" y="76" text-anchor="middle" font-size="12">(50 → hidden → 50)</text>
+
+                    <rect x="650" y="30" width="150" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <text x="725" y="58" text-anchor="middle" font-size="12">Probabilities</text>
+                    <text x="725" y="76" text-anchor="middle" font-size="12">Heatmap + Top 7</text>
+
+                    <line x1="190" y1="65" x2="230" y2="65" stroke="#0d4f8c" stroke-width="2" marker-end="url(#arrow-en)"/>
+                    <line x1="400" y1="65" x2="440" y2="65" stroke="#0d4f8c" stroke-width="2" marker-end="url(#arrow-en)"/>
+                    <line x1="610" y1="65" x2="650" y2="65" stroke="#0d4f8c" stroke-width="2" marker-end="url(#arrow-en)"/>
+                </svg>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-lg-6">
+                    <h6 class="fw-bold">Step 1: Build training pairs</h6>
+                    <p class="small text-muted mb-2">
+                        We take recent draws and create pairs: draw t as input, draw t+1 as the target.
+                        This turns the history into supervised learning data.
+                    </p>
+                    <h6 class="fw-bold mt-3">Step 2: Multi-hot encoding</h6>
+                    <p class="small text-muted mb-2">
+                        Each draw becomes a 50-dimensional vector. A number drawn gets a 1, otherwise 0.
+                        Example: draw {3, 7, 12, 18, 27, 33, 44} becomes a vector with 1s at those positions.
+                    </p>
+                </div>
+                <div class="col-lg-6">
+                    <h6 class="fw-bold">Step 3: Small neural network</h6>
+                    <p class="small text-muted mb-2">
+                        We use a single hidden layer (50 → hidden → 50). Each output neuron predicts the probability of
+                        one number appearing next.
+                    </p>
+                    <h6 class="fw-bold mt-3">Step 4: Probability output</h6>
+                    <p class="small text-muted mb-2">
+                        Outputs are sigmoid scores between 0 and 1. They do not need to sum to 1 because each number is
+                        treated independently.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-light border rounded p-3 mb-3">
+                <div class="fw-bold small mb-1">Mini Example</div>
+                <div class="small text-muted">
+                    If the model sees many historical cases where {7, 18, 33} are followed by 41, it may assign a higher
+                    probability to 41 after a similar input. The heatmap visualizes these learned tendencies.
+                </div>
+            </div>
+
+            <h6 class="fw-bold">How to read the heatmap</h6>
+            <ul class="small">
+                <li>Darker cells mean higher model-estimated probability for that number.</li>
+                <li>“Top 7” lists the highest probabilities, not guaranteed outcomes.</li>
+                <li>The model is retrained on the latest window each time you run it.</li>
+            </ul>
+
+            <h6 class="fw-bold mt-3">Training details (loss & optimization)</h6>
+            <ul class="small">
+                <li>Each number is treated as a binary target (appears / does not appear).</li>
+                <li>We use sigmoid outputs and minimize binary cross-entropy per number.</li>
+                <li>Optimization uses simple gradient descent with a fixed learning rate.</li>
+                <li>We limit epochs to keep training fast and reduce overfitting.</li>
+            </ul>
+
+            <div class="bg-light border rounded p-3 mb-3">
+                <div class="fw-bold small mb-1">Concrete mapping example</div>
+                <div class="small text-muted">
+                    Suppose the last draw is {5, 12, 19, 22, 31, 38, 47}. The input vector has 1s at positions 5, 12, 19, 22, 31, 38, 47.
+                    After training, the model might output higher scores for numbers like 9, 21, or 41 if those tended to follow similar inputs in history.
+                </div>
+            </div>
+
+            <h6 class="fw-bold mt-3">Limitations (important)</h6>
+            <ul class="small">
+                <li>Lottery draws are random; no model can improve the true odds.</li>
+                <li>The network is intentionally simple for explainability and speed.</li>
+                <li>Patterns detected may be statistical noise rather than meaningful signals.</li>
+            </ul>
+        {% else %}
+            <p class="text-muted">
+                我们用最近开奖训练一个轻量神经网络，估计下一期每个号码出现的概率。
+                这是一个为了学习与可视化而设计的演示模型，并不代表预测准确性或中奖概率提升。
+            </p>
+            <div class="ai-diagram mb-3">
+                <svg viewBox="0 0 820 150" role="img" aria-label="AI 预测流程">
+                    <defs>
+                        <marker id="arrow-zh" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
+                            <path d="M0,0 L6,3 L0,6" fill="#0d4f8c"/>
+                        </marker>
+                    </defs>
+                    <rect x="20" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <text x="105" y="58" text-anchor="middle" font-size="12">最近 N 期</text>
+                    <text x="105" y="76" text-anchor="middle" font-size="12">历史开奖</text>
+
+                    <rect x="230" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <text x="315" y="58" text-anchor="middle" font-size="12">50 维多热向量</text>
+                    <text x="315" y="76" text-anchor="middle" font-size="12">每期 7 个 1</text>
+
+                    <rect x="440" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <text x="525" y="58" text-anchor="middle" font-size="12">小型神经网络</text>
+                    <text x="525" y="76" text-anchor="middle" font-size="12">50 → 隐层 → 50</text>
+
+                    <rect x="650" y="30" width="150" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <text x="725" y="58" text-anchor="middle" font-size="12">概率输出</text>
+                    <text x="725" y="76" text-anchor="middle" font-size="12">热力图 + Top 7</text>
+
+                    <line x1="190" y1="65" x2="230" y2="65" stroke="#0d4f8c" stroke-width="2" marker-end="url(#arrow-zh)"/>
+                    <line x1="400" y1="65" x2="440" y2="65" stroke="#0d4f8c" stroke-width="2" marker-end="url(#arrow-zh)"/>
+                    <line x1="610" y1="65" x2="650" y2="65" stroke="#0d4f8c" stroke-width="2" marker-end="url(#arrow-zh)"/>
+                </svg>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-lg-6">
+                    <h6 class="fw-bold">步骤 1：构造训练样本</h6>
+                    <p class="small text-muted mb-2">
+                        取最近 N 期，构造成“第 t 期 → 第 t+1 期”的监督学习样本。
+                    </p>
+                    <h6 class="fw-bold mt-3">步骤 2：多热编码</h6>
+                    <p class="small text-muted mb-2">
+                        每期号码编码成 50 维向量，开奖号码位置为 1，其余为 0。
+                        例如 {3, 7, 12, 18, 27, 33, 44} 对应 50 维中的 7 个 1。
+                    </p>
+                </div>
+                <div class="col-lg-6">
+                    <h6 class="fw-bold">步骤 3：小型神经网络</h6>
+                    <p class="small text-muted mb-2">
+                        结构为 50 → 隐层 → 50，每个输出神经元对应一个号码的出现概率。
+                    </p>
+                    <h6 class="fw-bold mt-3">步骤 4：概率输出</h6>
+                    <p class="small text-muted mb-2">
+                        使用 Sigmoid 输出 0–1 的概率分数，各号码独立，不要求总和为 1。
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-light border rounded p-3 mb-3">
+                <div class="fw-bold small mb-1">示例说明</div>
+                <div class="small text-muted">
+                    如果模型在历史中反复看到 {7, 18, 33} 之后常出现 41，
+                    那么在输入类似组合时，41 的概率可能会更高。热力图只是这些倾向的可视化。
+                </div>
+            </div>
+
+            <h6 class="fw-bold">如何解读热力图</h6>
+            <ul class="small">
+                <li>颜色越深表示模型估计概率越高。</li>
+                <li>“Top 7” 只是最高概率的列表，并不保证结果。</li>
+                <li>每次运行都会基于当前窗口重新训练。</li>
+            </ul>
+
+            <h6 class="fw-bold mt-3">训练细节（损失函数与优化）</h6>
+            <ul class="small">
+                <li>每个号码视为一个二分类目标（出现 / 未出现）。</li>
+                <li>输出使用 Sigmoid，并对每个号码计算二元交叉熵损失。</li>
+                <li>优化采用简单梯度下降，学习率固定。</li>
+                <li>训练轮数有限，保证速度并降低过拟合。</li>
+            </ul>
+
+            <div class="bg-light border rounded p-3 mb-3">
+                <div class="fw-bold small mb-1">具体映射示例</div>
+                <div class="small text-muted">
+                    假设最新一期号码为 {5, 12, 19, 22, 31, 38, 47}，输入向量对应位置为 1。
+                    若历史上相似输入常跟随 9、21 或 41，模型就可能给这些号码更高的概率分数。
+                </div>
+            </div>
+
+            <h6 class="fw-bold mt-3">重要限制</h6>
+            <ul class="small">
+                <li>彩票是随机事件，模型无法提高真实中奖概率。</li>
+                <li>该网络刻意保持简单，强调可解释性与速度。</li>
+                <li>模型发现的模式可能只是统计噪声。</li>
+            </ul>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -72,6 +272,12 @@
         loading: "{% if lang == 'en' %}Loading...{% else %}加载中...{% endif %}",
         meta: "{% if lang == 'en' %}Draws: {draws}, Samples: {samples}, Hidden: {hidden}, Epochs: {epochs}{% else %}期数: {draws}，样本: {samples}，隐藏层: {hidden}，轮数: {epochs}{% endif %}",
         probability: "{% if lang == 'en' %}Prob.{% else %}概率{% endif %}",
+        hitsLabel: "{% if lang == 'en' %}Hits vs {date}:{% else %}命中对比 {date}：{% endif %}",
+        mainLabel: "{% if lang == 'en' %}main{% else %}主号{% endif %}",
+        bonusLabel: "{% if lang == 'en' %}Bonus{% else %}Bonus{% endif %}",
+        yes: "{% if lang == 'en' %}Yes{% else %}命中{% endif %}",
+        no: "{% if lang == 'en' %}No{% else %}未中{% endif %}",
+        waiting: "{% if lang == 'en' %}Waiting for next draw to compare.{% else %}等待下一期开奖进行对比。{% endif %}",
     };
 </script>
 <script src="{% static 'lotto/js/ai.js' %}"></script>

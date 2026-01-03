@@ -338,6 +338,43 @@ def build_recommendations(draws: List[Draw], seed: str | None = None, lang: str 
     return recommendations
 
 
+def build_recommendation_snapshot_payload(draws: List[Draw], seed: str | None = None) -> list[dict]:
+    zh_recs = build_recommendations(draws, seed=seed, lang='zh')
+    en_recs = build_recommendations(draws, seed=seed, lang='en')
+    en_by_alg = {rec.algorithm: rec for rec in en_recs}
+
+    payload = []
+    for zh_rec in zh_recs:
+        en_rec = en_by_alg.get(zh_rec.algorithm)
+        payload.append({
+            'numbers': zh_rec.numbers,
+            'algorithm': zh_rec.algorithm,
+            'metrics': {
+                'odd_count': zh_rec.odd_count,
+                'even_count': zh_rec.even_count,
+                'small_count': zh_rec.small_count,
+                'large_count': zh_rec.large_count,
+                'total_sum': zh_rec.total_sum,
+                'hot_count': zh_rec.hot_count,
+                'cold_count': zh_rec.cold_count,
+                'pair_boost': zh_rec.pair_boost,
+            },
+            'texts': {
+                'zh': {
+                    'label': zh_rec.algorithm_label,
+                    'summary': zh_rec.algorithm_summary,
+                    'explanation': zh_rec.explanation,
+                },
+                'en': {
+                    'label': (en_rec.algorithm_label if en_rec else zh_rec.algorithm_label),
+                    'summary': (en_rec.algorithm_summary if en_rec else zh_rec.algorithm_summary),
+                    'explanation': (en_rec.explanation if en_rec else zh_rec.explanation),
+                },
+            },
+        })
+    return payload
+
+
 def _mode(values: List[int]) -> int:
     if not values:
         return 3

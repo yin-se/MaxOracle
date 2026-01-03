@@ -56,3 +56,47 @@ class IngestionLog(models.Model):
 
     def __str__(self) -> str:
         return f"{self.run_at:%Y-%m-%d %H:%M} {self.status} {self.source}"
+
+
+class RecommendationSnapshot(models.Model):
+    base_draw_date = models.DateField(db_index=True)
+    window = models.PositiveIntegerField(default=0)
+    seed = models.CharField(max_length=64, blank=True)
+    payload = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['base_draw_date', 'window', 'seed'],
+                name='uniq_snapshot_base_window_seed',
+            ),
+        ]
+
+    def __str__(self) -> str:
+        window_label = self.window if self.window else 'all'
+        seed_label = self.seed or 'auto'
+        return f"{self.base_draw_date} window={window_label} seed={seed_label}"
+
+
+class AiPredictionSnapshot(models.Model):
+    base_draw_date = models.DateField(db_index=True)
+    window = models.PositiveIntegerField(default=0)
+    seed = models.CharField(max_length=64, blank=True)
+    payload = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['base_draw_date', 'window', 'seed'],
+                name='uniq_ai_snapshot_base_window_seed',
+            ),
+        ]
+
+    def __str__(self) -> str:
+        window_label = self.window if self.window else 'all'
+        seed_label = self.seed or 'auto'
+        return f"{self.base_draw_date} window={window_label} seed={seed_label}"

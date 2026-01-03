@@ -100,10 +100,49 @@ body {
     margin-bottom: 0.25rem;
 }
 
+.match-line {
+    font-weight: 600;
+    color: #1b2b38;
+}
+
+.match-count {
+    display: inline-block;
+    min-width: 1.5rem;
+    text-align: center;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background: rgba(13, 79, 140, 0.12);
+    color: #0d4f8c;
+}
+
+.bonus-hit {
+    color: #0b8a78;
+    font-weight: 700;
+}
+
+.bonus-miss {
+    color: #b21f2d;
+    font-weight: 700;
+}
+
 .ai-heatmap {
     display: grid;
     grid-template-columns: repeat(10, minmax(0, 1fr));
     gap: 0.5rem;
+}
+
+.ai-diagram {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.ai-diagram svg {
+    width: 100%;
+    height: auto;
+}
+
+.ai-diagram text {
+    font-family: "Source Sans 3", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif;
 }
 
 .ai-cell {

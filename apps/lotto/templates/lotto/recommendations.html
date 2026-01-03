@@ -12,6 +12,52 @@
     {% endif %}
 </h2>
 
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form class="row g-3" method="get">
+            {% if seed %}
+            <input type="hidden" name="seed" value="{{ seed }}">
+            {% endif %}
+            <div class="col-md-3">
+                <label class="form-label">{% if lang == 'en' %}Window (draws){% else %}样本窗口（期数）{% endif %}</label>
+                <select class="form-select" name="window">
+                    <option value="100" {% if window == 100 %}selected{% endif %}>100</option>
+                    <option value="500" {% if window == 500 %}selected{% endif %}>500</option>
+                    <option value="1000" {% if window == 1000 %}selected{% endif %}>1000</option>
+                    <option value="2000" {% if window == 2000 %}selected{% endif %}>2000</option>
+                    <option value="0" {% if window == 0 %}selected{% endif %}>{% if lang == 'en' %}All{% else %}全部{% endif %}</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary w-100" type="submit">
+                    {% if lang == 'en' %}Update Window{% else %}更新窗口{% endif %}
+                </button>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <div class="small text-muted">
+                    {% if base_draw_date %}
+                        {% if compare_draw %}
+                            {% if lang == 'en' %}
+                                Snapshot based on draws up to {{ base_draw_date|date:"DATE_FORMAT" }}, compared with latest draw {{ compare_draw.date|date:"DATE_FORMAT" }}. It stays fixed until the next draw or a window change.
+                            {% else %}
+                                本推荐基于截至 {{ base_draw_date|date:"DATE_FORMAT" }} 的数据，并与最新开奖 {{ compare_draw.date|date:"DATE_FORMAT" }} 对比；直到下一期开奖或更改窗口才会更新。
+                            {% endif %}
+                        {% else %}
+                            {% if lang == 'en' %}
+                                Snapshot based on draws up to {{ base_draw_date|date:"DATE_FORMAT" }}. Waiting for the next draw to compare.
+                            {% else %}
+                                本推荐基于截至 {{ base_draw_date|date:"DATE_FORMAT" }} 的数据，等待下一期开奖进行对比。
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        {% if lang == 'en' %}No draw data yet.{% else %}暂无开奖数据。{% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="row g-4 recommendation-grid">
     {% for rec in recommendations %}
     <div class="col-md-6 col-lg-4">
@@ -34,6 +80,29 @@
                         奇偶比 {{ rec.odd_count }}:{{ rec.even_count }} | 大小比 {{ rec.small_count }}:{{ rec.large_count }} | 和值 {{ rec.total_sum }}
                     {% endif %}
                 </p>
+                {% if compare_draw %}
+                    <p class="small mb-2 match-line">
+                        {% if lang == 'en' %}
+                            Hits vs {{ compare_draw.date|date:"DATE_FORMAT" }}:
+                            <span class="match-count">{{ rec.match_count }}</span>
+                            main, Bonus
+                            <span class="{% if rec.bonus_hit %}bonus-hit{% else %}bonus-miss{% endif %}">
+                                {% if rec.bonus_hit %}Yes{% else %}No{% endif %}
+                            </span>
+                        {% else %}
+                            命中主号
+                            <span class="match-count">{{ rec.match_count }}</span>
+                            个 | Bonus
+                            <span class="{% if rec.bonus_hit %}bonus-hit{% else %}bonus-miss{% endif %}">
+                                {% if rec.bonus_hit %}命中{% else %}未中{% endif %}
+                            </span>
+                        {% endif %}
+                    </p>
+                {% else %}
+                    <p class="small text-muted mb-2">
+                        {% if lang == 'en' %}Waiting for next draw to compare.{% else %}等待下一期开奖进行对比。{% endif %}
+                    </p>
+                {% endif %}
                 <ul class="small">
                     {% for line in rec.explanation %}
                         <li>{{ line }}</li>
