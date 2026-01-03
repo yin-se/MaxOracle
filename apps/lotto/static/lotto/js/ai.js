@@ -39,7 +39,7 @@ function renderCompare(data) {
         compareContainer.textContent = i18n.waiting || '';
         return;
     }
-    const dateLabel = new Date(data.compare_draw_date).toLocaleDateString();
+    const dateLabel = data.compare_draw_date_label || data.compare_draw_date;
     const hitsLabel = (i18n.hitsLabel || 'Hits vs {date}:').replace('{date}', dateLabel);
     const mainLabel = i18n.mainLabel || 'main';
     const bonusLabel = i18n.bonusLabel || 'Bonus';

@@ -7,6 +7,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import translation
+from django.utils.formats import date_format
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
@@ -326,6 +327,7 @@ def api_ai(request):
         'experimental': True,
         'base_draw_date': base_draw_date.isoformat() if base_draw_date else None,
         'compare_draw_date': compare_draw.date.isoformat() if compare_draw else None,
+        'compare_draw_date_label': date_format(compare_draw.date, format='DATE_FORMAT') if compare_draw else None,
         'compare_draw_numbers': compare_draw.numbers if compare_draw else [],
         'compare_draw_bonus': compare_draw.bonus if compare_draw else None,
         'match_count': match_count,
