@@ -432,9 +432,36 @@ def cron_ingest(request):
     if token != expected_token:
         return JsonResponse({'error': 'Unauthorized'}, status=403)
 
-    game, _ = _get_game_context(request)
+    game_param = request.GET.get('game') or request.POST.get('game')
+    if game_param and game_param != 'all' and game_param not in settings.LOTTO_GAMES:
+        return JsonResponse({'error': 'Unsupported game', 'game': game_param}, status=400)
+
+    if game_param and game_param != 'all':
+        game = get_game_config(game_param)
+    else:
+        game, _ = _get_game_context(request)
     source = request.GET.get('source') or request.POST.get('source') or 'auto'
     try:
+        if game_param == 'all':
+            total_added = 0
+            messages = []
+            errors = []
+            for game_key in settings.LOTTO_GAMES.keys():
+                try:
+                    result = ingest_draws(incremental=True, source=source, game=game_key)
+                    total_added += result['draws_added']
+                    messages.append(f"{game_key}: {result['message']}")
+                except Exception as exc:
+                    errors.append(f"{game_key}: {exc}")
+            if errors and len(errors) == len(settings.LOTTO_GAMES):
+                return JsonResponse({'error': 'All games failed', 'details': errors}, status=500)
+            return JsonResponse({
+                'status': 'partial' if errors else 'success',
+                'draws_added': total_added,
+                'message': ' | '.join(messages),
+                'errors': errors,
+            })
+
         result = ingest_draws(incremental=True, source=source, game=game.key)
     except Exception as exc:
         return JsonResponse({'error': str(exc)}, status=500)
