@@ -1,8 +1,17 @@
+from django.conf import settings
 from django.db import models
 
 
+def _game_choices() -> list[tuple[str, str]]:
+    return [
+        (key, config.get('game_name_en', key))
+        for key, config in settings.LOTTO_GAMES.items()
+    ]
+
+
 class Draw(models.Model):
-    date = models.DateField(unique=True, db_index=True)
+    game = models.CharField(max_length=8, db_index=True, choices=_game_choices(), default='max')
+    date = models.DateField(db_index=True)
     numbers = models.JSONField()
     bonus = models.PositiveSmallIntegerField()
     source_url = models.URLField(blank=True)
@@ -12,9 +21,12 @@ class Draw(models.Model):
 
     class Meta:
         ordering = ['-date']
+        constraints = [
+            models.UniqueConstraint(fields=['game', 'date'], name='uniq_game_date'),
+        ]
 
     def __str__(self) -> str:
-        return f"{self.date}: {' '.join(str(n) for n in self.numbers)} + {self.bonus}"
+        return f"{self.game} {self.date}: {' '.join(str(n) for n in self.numbers)} + {self.bonus}"
 
 
 class DrawNumber(models.Model):
@@ -44,6 +56,7 @@ class IngestionLog(models.Model):
 
     run_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=16, choices=STATUS_CHOICES)
+    game = models.CharField(max_length=8, db_index=True, choices=_game_choices(), default='max')
     source = models.CharField(max_length=32)
     message = models.TextField(blank=True)
     draws_processed = models.PositiveIntegerField(default=0)
@@ -55,10 +68,11 @@ class IngestionLog(models.Model):
         ordering = ['-run_at']
 
     def __str__(self) -> str:
-        return f"{self.run_at:%Y-%m-%d %H:%M} {self.status} {self.source}"
+        return f"{self.run_at:%Y-%m-%d %H:%M} {self.game} {self.status} {self.source}"
 
 
 class RecommendationSnapshot(models.Model):
+    game = models.CharField(max_length=8, db_index=True, choices=_game_choices(), default='max')
     base_draw_date = models.DateField(db_index=True)
     window = models.PositiveIntegerField(default=0)
     seed = models.CharField(max_length=64, blank=True)
@@ -69,18 +83,19 @@ class RecommendationSnapshot(models.Model):
         ordering = ['-created_at']
         constraints = [
             models.UniqueConstraint(
-                fields=['base_draw_date', 'window', 'seed'],
-                name='uniq_snapshot_base_window_seed',
+                fields=['game', 'base_draw_date', 'window', 'seed'],
+                name='uniq_snapshot_game_base_window_seed',
             ),
         ]
 
     def __str__(self) -> str:
         window_label = self.window if self.window else 'all'
         seed_label = self.seed or 'auto'
-        return f"{self.base_draw_date} window={window_label} seed={seed_label}"
+        return f"{self.game} {self.base_draw_date} window={window_label} seed={seed_label}"
 
 
 class AiPredictionSnapshot(models.Model):
+    game = models.CharField(max_length=8, db_index=True, choices=_game_choices(), default='max')
     base_draw_date = models.DateField(db_index=True)
     window = models.PositiveIntegerField(default=0)
     seed = models.CharField(max_length=64, blank=True)
@@ -91,12 +106,12 @@ class AiPredictionSnapshot(models.Model):
         ordering = ['-created_at']
         constraints = [
             models.UniqueConstraint(
-                fields=['base_draw_date', 'window', 'seed'],
-                name='uniq_ai_snapshot_base_window_seed',
+                fields=['game', 'base_draw_date', 'window', 'seed'],
+                name='uniq_ai_snapshot_game_base_window_seed',
             ),
         ]
 
     def __str__(self) -> str:
         window_label = self.window if self.window else 'all'
         seed_label = self.seed or 'auto'
-        return f"{self.base_draw_date} window={window_label} seed={seed_label}"
+        return f"{self.game} {self.base_draw_date} window={window_label} seed={seed_label}"

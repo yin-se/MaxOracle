@@ -4,6 +4,9 @@ const mainLabel = i18n.mainLabel || '主号频次';
 const bonusLabel = i18n.bonusLabel || 'Bonus 频次';
 const distributionLabel = i18n.distributionLabel || '分布';
 let charts = {};
+const rootStyle = getComputedStyle(document.body || document.documentElement);
+const chartPrimary = rootStyle.getPropertyValue('--chart-primary').trim() || 'rgba(13, 110, 253, 0.6)';
+const chartAccent = rootStyle.getPropertyValue('--chart-accent').trim() || 'rgba(25, 135, 84, 0.6)';
 
 function buildBarChart(ctx, labels, data, label) {
     return new Chart(ctx, {
@@ -13,7 +16,7 @@ function buildBarChart(ctx, labels, data, label) {
             datasets: [{
                 label: label,
                 data: data,
-                backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                backgroundColor: chartPrimary,
             }],
         },
         options: {
@@ -55,7 +58,7 @@ function buildHistogramChart(ctx, labels, data) {
             datasets: [{
                 label: distributionLabel,
                 data: data,
-                backgroundColor: 'rgba(25, 135, 84, 0.6)',
+                backgroundColor: chartAccent,
             }],
         },
         options: {

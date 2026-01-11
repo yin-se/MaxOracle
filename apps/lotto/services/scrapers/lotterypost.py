@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from datetime import date
 from typing import List, Optional
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -10,7 +11,7 @@ from dateutil import parser as date_parser
 
 from .base import BaseScraper, DrawRecord, ScrapeError, logger
 
-NUMBER_PATTERN = re.compile(r'\b([1-9]|[1-4][0-9]|50)\b')
+NUMBER_PATTERN = re.compile(r'\b\d+\b')
 DATE_PATTERNS = [
     re.compile(r'\b\w+\s+\d{1,2},\s*\d{4}\b'),
     re.compile(r'\b\d{1,2}/\d{1,2}/\d{4}\b'),
@@ -26,8 +27,11 @@ USER_AGENT = (
 class LotteryPostScraper(BaseScraper):
     name = 'lotterypost'
 
-    def __init__(self, base_url: str):
-        super().__init__(base_url)
+    def __init__(self, base_url: str, game_config=None):
+        super().__init__(base_url, game_config)
+        parsed = urlparse(base_url)
+        parts = [p for p in parsed.path.split('/') if p]
+        self._path_hint = '/'.join(parts[-2:]) if len(parts) >= 2 else ''
         self._current_url: Optional[str] = None
 
     def fetch_draws(self, max_pages: int | None = None) -> List[DrawRecord]:
@@ -72,7 +76,7 @@ class LotteryPostScraper(BaseScraper):
             if not draw_date:
                 continue
             numbers = self._extract_numbers(row, text)
-            if len(numbers) < 7:
+            if len(numbers) < self.main_count:
                 continue
             bonus = self._extract_bonus(row, numbers)
             if bonus is None:
@@ -80,7 +84,7 @@ class LotteryPostScraper(BaseScraper):
             records.append(
                 DrawRecord(
                     date=draw_date,
-                    numbers=numbers[:7],
+                    numbers=numbers[: self.main_count],
                     bonus=bonus,
                     source_url=self._current_url or self.base_url,
                 )
@@ -143,9 +147,9 @@ class LotteryPostScraper(BaseScraper):
             value = node.get_text(strip=True)
             if value.isdigit():
                 balls.append(int(value))
-        if len(balls) >= 7:
-            return balls
-        return [int(n) for n in NUMBER_PATTERN.findall(text)]
+        if len(balls) >= self.main_count:
+            return [n for n in balls if 1 <= n <= self.max_number]
+        return [int(n) for n in NUMBER_PATTERN.findall(text) if 1 <= int(n) <= self.max_number]
 
     def _extract_bonus(self, row, numbers: List[int]) -> Optional[int]:
         bonus_nodes = row.select('.bonus, .ball.bonus, .results__bonus')
@@ -153,7 +157,7 @@ class LotteryPostScraper(BaseScraper):
             value = node.get_text(strip=True)
             if value.isdigit():
                 return int(value)
-        return numbers[7] if len(numbers) >= 8 else None
+        return numbers[self.main_count] if len(numbers) >= self.main_count + 1 else None
 
     def _extract_date(self, text: str) -> Optional[date]:
         for pattern in DATE_PATTERNS:
@@ -174,7 +178,7 @@ class LotteryPostScraper(BaseScraper):
         urls = set()
         for link in soup.find_all('a', href=True):
             href = link['href']
-            if 'lottomax/past' not in href:
+            if self._path_hint and self._path_hint not in href:
                 continue
             if href.startswith('/'):
                 href = f"https://www.lotterypost.com{href}"

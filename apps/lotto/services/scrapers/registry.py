@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from typing import List, Tuple
-from django.conf import settings
-
 from .base import DrawRecord, ScrapeError
+from ..game_config import get_game_config
 from .olg import OlgScraper
 from .lotto8 import Lotto8Scraper
 from .lotterypost import LotteryPostScraper
@@ -15,8 +14,9 @@ SCRAPERS = {
 }
 
 
-def get_enabled_scrapers() -> List[Tuple[str, object]]:
-    config = settings.LOTTO_CONFIG.get('DATA_SOURCES', {})
+def get_enabled_scrapers(game: str | None = None) -> List[Tuple[str, object]]:
+    game_config = get_game_config(game)
+    config = game_config.data_sources or {}
     enabled = []
     for name, info in config.items():
         if not info.get('enabled', True):
@@ -24,12 +24,16 @@ def get_enabled_scrapers() -> List[Tuple[str, object]]:
         scraper_cls = SCRAPERS.get(name)
         if not scraper_cls:
             continue
-        enabled.append((name, scraper_cls(info['past_results_url'])))
+        enabled.append((name, scraper_cls(info['past_results_url'], game_config)))
     return enabled
 
 
-def fetch_draws(source: str = 'auto', max_pages: int | None = None) -> tuple[str, List[DrawRecord]]:
-    enabled = get_enabled_scrapers()
+def fetch_draws(
+    source: str = 'auto',
+    max_pages: int | None = None,
+    game: str | None = None,
+) -> tuple[str, List[DrawRecord]]:
+    enabled = get_enabled_scrapers(game=game)
     if not enabled:
         raise ScrapeError('No data sources configured', 'registry', 'Enable at least one source')
 

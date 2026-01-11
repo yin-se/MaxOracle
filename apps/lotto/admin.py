@@ -7,9 +7,9 @@ from .services.ingestion import ingest_draws
 
 @admin.register(Draw)
 class DrawAdmin(admin.ModelAdmin):
-    list_display = ('date', 'bonus', 'source_url')
-    list_filter = ('date',)
-    search_fields = ('date',)
+    list_display = ('game', 'date', 'bonus', 'source_url')
+    list_filter = ('game', 'date')
+    search_fields = ('date', 'game')
 
 
 @admin.register(DrawNumber)
@@ -21,8 +21,8 @@ class DrawNumberAdmin(admin.ModelAdmin):
 
 @admin.register(IngestionLog)
 class IngestionLogAdmin(admin.ModelAdmin):
-    list_display = ('run_at', 'status', 'source', 'draws_processed', 'draws_added')
-    list_filter = ('status', 'source', 'run_at')
+    list_display = ('run_at', 'game', 'status', 'source', 'draws_processed', 'draws_added')
+    list_filter = ('game', 'status', 'source', 'run_at')
     actions = ['trigger_ingest', 'trigger_incremental']
 
     def trigger_ingest(self, request, queryset):
@@ -48,13 +48,13 @@ class IngestionLogAdmin(admin.ModelAdmin):
 
 @admin.register(RecommendationSnapshot)
 class RecommendationSnapshotAdmin(admin.ModelAdmin):
-    list_display = ('base_draw_date', 'window', 'seed', 'created_at')
-    list_filter = ('base_draw_date', 'window')
-    search_fields = ('seed',)
+    list_display = ('game', 'base_draw_date', 'window', 'seed', 'created_at')
+    list_filter = ('game', 'base_draw_date', 'window')
+    search_fields = ('seed', 'game')
 
 
 @admin.register(AiPredictionSnapshot)
 class AiPredictionSnapshotAdmin(admin.ModelAdmin):
-    list_display = ('base_draw_date', 'window', 'seed', 'created_at')
-    list_filter = ('base_draw_date', 'window')
-    search_fields = ('seed',)
+    list_display = ('game', 'base_draw_date', 'window', 'seed', 'created_at')
+    list_filter = ('game', 'base_draw_date', 'window')
+    search_fields = ('seed', 'game')

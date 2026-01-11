@@ -59,11 +59,11 @@ class Lotto8Scraper(BaseScraper):
             draw_date = self._parse_date(cells[0])
             numbers = self._extract_numbers(cells[1])
             bonus_values = self._extract_numbers(cells[2])
-            if not draw_date or len(numbers) < 7 or not bonus_values:
+            if not draw_date or len(numbers) < self.main_count or not bonus_values:
                 continue
             record = DrawRecord(
                 date=draw_date,
-                numbers=numbers[:7],
+                numbers=numbers[: self.main_count],
                 bonus=bonus_values[0],
                 source_url=self.base_url,
             )
@@ -99,7 +99,7 @@ class Lotto8Scraper(BaseScraper):
                 number = int(value)
             except ValueError:
                 continue
-            if 1 <= number <= 50:
+            if 1 <= number <= self.max_number:
                 numbers.append(number)
         return numbers
 

@@ -15,6 +15,7 @@ from .models import Draw, IngestionLog, RecommendationSnapshot, AiPredictionSnap
 from .services.ai import predict_next_draw_probabilities
 from .services.analytics import compute_analysis, get_draws
 from .services.cache import AnalysisCache
+from .services.game_config import get_game_config, get_supported_games
 from .services.ingestion import ingest_draws
 from .services.recommender import build_recommendations, build_recommendation_snapshot_payload
 
@@ -52,72 +53,108 @@ def _get_lang(request) -> str:
     return lang
 
 
+def _get_game(request) -> str:
+    requested = request.GET.get('game')
+    if requested in settings.LOTTO_GAMES:
+        request.session['game'] = requested
+    game = request.session.get('game', settings.LOTTO_DEFAULT_GAME)
+    if game not in settings.LOTTO_GAMES:
+        game = settings.LOTTO_DEFAULT_GAME
+        request.session['game'] = game
+    return game
+
+
+def _get_game_context(request):
+    game_key = _get_game(request)
+    game = get_game_config(game_key)
+    games = get_supported_games()
+    return game, games
+
+
 def home(request):
     lang = _get_lang(request)
-    latest_draw = Draw.objects.order_by('-date').first()
-    latest_log = IngestionLog.objects.first()
-    total_draws = Draw.objects.count()
+    game, games = _get_game_context(request)
+    latest_draw = Draw.objects.filter(game=game.key).order_by('-date').first()
+    latest_log = IngestionLog.objects.filter(game=game.key).first()
+    total_draws = Draw.objects.filter(game=game.key).count()
     context = {
         'latest_draw': latest_draw,
         'latest_log': latest_log,
         'total_draws': total_draws,
         'disclaimer': _disclaimer_text(lang),
         'lang': lang,
+        'game': game,
+        'games': games,
     }
     return render(request, 'lotto/home.html', context)
 
 
 def rules(request):
     lang = _get_lang(request)
-    return render(request, 'lotto/rules.html', {'disclaimer': _disclaimer_text(lang), 'lang': lang})
+    game, games = _get_game_context(request)
+    return render(
+        request,
+        'lotto/rules.html',
+        {'disclaimer': _disclaimer_text(lang), 'lang': lang, 'game': game, 'games': games},
+    )
 
 
 def data_status(request):
     lang = _get_lang(request)
-    latest_draw = Draw.objects.order_by('-date').first()
-    logs = IngestionLog.objects.all()[:10]
-    recent_draws = Draw.objects.order_by('-date')[:15]
+    game, games = _get_game_context(request)
+    latest_draw = Draw.objects.filter(game=game.key).order_by('-date').first()
+    logs = IngestionLog.objects.filter(game=game.key)[:10]
+    recent_draws = Draw.objects.filter(game=game.key).order_by('-date')[:15]
     context = {
         'latest_draw': latest_draw,
-        'total_draws': Draw.objects.count(),
+        'total_draws': Draw.objects.filter(game=game.key).count(),
         'logs': logs,
         'recent_draws': recent_draws,
         'disclaimer': _disclaimer_text(lang),
         'lang': lang,
+        'game': game,
+        'games': games,
     }
     return render(request, 'lotto/data.html', context)
 
 
 def analysis(request):
     lang = _get_lang(request)
+    game, games = _get_game_context(request)
     window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
     context = {
         'window_default': window_default,
         'disclaimer': _disclaimer_text(lang),
         'lang': lang,
+        'game': game,
+        'games': games,
     }
     return render(request, 'lotto/analysis.html', context)
 
 
 def ai_lab(request):
     lang = _get_lang(request)
+    game, games = _get_game_context(request)
     window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
     context = {
         'window_default': window_default,
         'disclaimer': _disclaimer_text(lang),
         'lang': lang,
+        'game': game,
+        'games': games,
     }
     return render(request, 'lotto/ai.html', context)
 
 
 def recommendations(request):
     lang = _get_lang(request)
+    game, games = _get_game_context(request)
     window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
     seed = request.GET.get('seed') or settings.LOTTO_CONFIG.get('RECOMMENDATION_SEED')
     window = _parse_int(request.GET.get('window'), window_default)
     window_value = window if window > 0 else 0
 
-    latest_two = list(Draw.objects.order_by('-date')[:2])
+    latest_two = list(Draw.objects.filter(game=game.key).order_by('-date')[:2])
     latest_draw = latest_two[0] if latest_two else None
     previous_draw = latest_two[1] if len(latest_two) > 1 else None
     base_draw = previous_draw or latest_draw
@@ -129,14 +166,21 @@ def recommendations(request):
     if base_draw_date:
         seed_value = str(seed or f"auto:{base_draw_date.isoformat()}:{window_value}").strip()
         snapshot = RecommendationSnapshot.objects.filter(
+            game=game.key,
             base_draw_date=base_draw_date,
             window=window_value,
             seed=seed_value,
         ).first()
         if snapshot is None:
-            draws = get_draws(window=window_value or None, end_date=base_draw_date)
-            payload = build_recommendation_snapshot_payload(draws, seed=seed_value)
+            draws = get_draws(window=window_value or None, end_date=base_draw_date, game=game.key)
+            payload = build_recommendation_snapshot_payload(
+                draws,
+                seed=seed_value,
+                main_count=game.main_count,
+                max_number=game.max_number,
+            )
             snapshot = RecommendationSnapshot.objects.create(
+                game=game.key,
                 base_draw_date=base_draw_date,
                 window=window_value,
                 seed=seed_value,
@@ -179,21 +223,25 @@ def recommendations(request):
         'compare_draw': compare_draw,
         'disclaimer': _disclaimer_text(lang),
         'lang': lang,
+        'game': game,
+        'games': games,
     }
     return render(request, 'lotto/recommendations.html', context)
 
 
 def api_status(request):
-    latest_draw = Draw.objects.order_by('-date').first()
-    latest_log = IngestionLog.objects.first()
+    game, _ = _get_game_context(request)
+    latest_draw = Draw.objects.filter(game=game.key).order_by('-date').first()
+    latest_log = IngestionLog.objects.filter(game=game.key).first()
     return JsonResponse({
-        'total_draws': Draw.objects.count(),
+        'total_draws': Draw.objects.filter(game=game.key).count(),
         'latest_draw_date': latest_draw.date.isoformat() if latest_draw else None,
         'latest_ingestion': latest_log.message if latest_log else None,
     })
 
 
 def api_analysis(request):
+    game, _ = _get_game_context(request)
     window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
     rolling_default = settings.LOTTO_CONFIG['DEFAULT_ROLLING_WINDOW']
 
@@ -205,6 +253,7 @@ def api_analysis(request):
     end_date = _parse_date(request.GET.get('end_date'))
 
     params = {
+        'game': game.key,
         'window': window,
         'rolling': rolling,
         'start_date': start_date,
@@ -212,8 +261,14 @@ def api_analysis(request):
     }
 
     def compute():
-        draws = get_draws(window=window, start_date=start_date, end_date=end_date)
-        return compute_analysis(draws, rolling_window=rolling)
+        draws = get_draws(window=window, start_date=start_date, end_date=end_date, game=game.key)
+        return compute_analysis(
+            draws,
+            rolling_window=rolling,
+            max_number=game.max_number,
+            main_count=game.main_count,
+            small_threshold=game.small_threshold,
+        )
 
     analysis_data = cache.get_or_set('analysis', params, compute)
 
@@ -237,13 +292,20 @@ def api_analysis(request):
 
 def api_recommendations(request):
     lang = _get_lang(request)
+    game, _ = _get_game_context(request)
     window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
     seed = request.GET.get('seed')
     window = _parse_int(request.GET.get('window'), window_default)
     if window <= 0:
         window = None
-    draws = get_draws(window=window)
-    recommendations_list = build_recommendations(draws, seed=seed, lang=lang)
+    draws = get_draws(window=window, game=game.key)
+    recommendations_list = build_recommendations(
+        draws,
+        seed=seed,
+        lang=lang,
+        main_count=game.main_count,
+        max_number=game.max_number,
+    )
 
     payload = []
     for rec in recommendations_list:
@@ -272,17 +334,19 @@ def api_recommendations(request):
 
 def api_ai(request):
     lang = _get_lang(request)
+    game, _ = _get_game_context(request)
     window_default = settings.LOTTO_CONFIG['DEFAULT_WINDOW']
     seed = request.GET.get('seed') or settings.LOTTO_CONFIG.get('RECOMMENDATION_SEED')
     window = _parse_int(request.GET.get('window'), window_default)
     window_value = window if window > 0 else 0
 
     params = {
+        'game': game.key,
         'window': window_value,
         'seed': seed,
     }
 
-    latest_two = list(Draw.objects.order_by('-date')[:2])
+    latest_two = list(Draw.objects.filter(game=game.key).order_by('-date')[:2])
     latest_draw = latest_two[0] if latest_two else None
     previous_draw = latest_two[1] if len(latest_two) > 1 else None
     base_draw = previous_draw or latest_draw
@@ -293,14 +357,21 @@ def api_ai(request):
     if base_draw_date:
         seed_value = str(seed or f"auto:ai:{base_draw_date.isoformat()}:{window_value}").strip()
         snapshot = AiPredictionSnapshot.objects.filter(
+            game=game.key,
             base_draw_date=base_draw_date,
             window=window_value,
             seed=seed_value,
         ).first()
         if snapshot is None:
-            draws = get_draws(window=window_value or None, end_date=base_draw_date)
-            payload = predict_next_draw_probabilities(draws, seed=seed_value)
+            draws = get_draws(window=window_value or None, end_date=base_draw_date, game=game.key)
+            payload = predict_next_draw_probabilities(
+                draws,
+                seed=seed_value,
+                max_number=game.max_number,
+                main_count=game.main_count,
+            )
             snapshot = AiPredictionSnapshot.objects.create(
+                game=game.key,
                 base_draw_date=base_draw_date,
                 window=window_value,
                 seed=seed_value,
@@ -310,8 +381,13 @@ def api_ai(request):
 
     if result is None:
         def compute():
-            draws = get_draws(window=window_value or None)
-            return predict_next_draw_probabilities(draws, seed=seed)
+            draws = get_draws(window=window_value or None, game=game.key)
+            return predict_next_draw_probabilities(
+                draws,
+                seed=seed,
+                max_number=game.max_number,
+                main_count=game.main_count,
+            )
 
         result = cache.get_or_set('ai', params, compute, ttl=60 * 30)
 
@@ -356,9 +432,10 @@ def cron_ingest(request):
     if token != expected_token:
         return JsonResponse({'error': 'Unauthorized'}, status=403)
 
-    source = request.GET.get('source') or request.POST.get('source') or 'lotto8'
+    game, _ = _get_game_context(request)
+    source = request.GET.get('source') or request.POST.get('source') or 'auto'
     try:
-        result = ingest_draws(incremental=True, source=source)
+        result = ingest_draws(incremental=True, source=source, game=game.key)
     except Exception as exc:
         return JsonResponse({'error': str(exc)}, status=500)
 

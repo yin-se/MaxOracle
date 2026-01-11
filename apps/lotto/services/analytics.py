@@ -6,6 +6,8 @@ from datetime import date
 from itertools import combinations
 from typing import List, Optional
 
+from django.conf import settings
+
 from ..models import Draw
 
 
@@ -27,8 +29,14 @@ class AnalysisResult:
     rolling_series: dict
 
 
-def get_draws(window: Optional[int] = None, start_date: Optional[date] = None, end_date: Optional[date] = None) -> List[Draw]:
-    qs = Draw.objects.all().order_by('-date')
+def get_draws(
+    window: Optional[int] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    game: Optional[str] = None,
+) -> List[Draw]:
+    game_key = game or settings.LOTTO_DEFAULT_GAME
+    qs = Draw.objects.filter(game=game_key).order_by('-date')
     if start_date:
         qs = qs.filter(date__gte=start_date)
     if end_date:
@@ -38,7 +46,15 @@ def get_draws(window: Optional[int] = None, start_date: Optional[date] = None, e
     return list(qs)
 
 
-def compute_analysis(draws: List[Draw], rolling_window: int = 100, top_pairs: int = 15, top_triplets: int = 15) -> AnalysisResult:
+def compute_analysis(
+    draws: List[Draw],
+    rolling_window: int = 100,
+    top_pairs: int = 15,
+    top_triplets: int = 15,
+    max_number: int = 50,
+    main_count: int = 7,
+    small_threshold: Optional[int] = None,
+) -> AnalysisResult:
     total_draws = len(draws)
     main_counts: Counter[int] = Counter()
     bonus_counts: Counter[int] = Counter()
@@ -48,6 +64,7 @@ def compute_analysis(draws: List[Draw], rolling_window: int = 100, top_pairs: in
     size_counts = Counter()
     consecutive_hits = 0
 
+    threshold = small_threshold if small_threshold is not None else max_number // 2
     for draw in draws:
         numbers = sorted(draw.numbers)
         main_counts.update(numbers)
@@ -57,19 +74,19 @@ def compute_analysis(draws: List[Draw], rolling_window: int = 100, top_pairs: in
         spans.append(numbers[-1] - numbers[0])
         odd_count = sum(1 for n in numbers if n % 2 == 1)
         odd_even_counts[odd_count] += 1
-        small_count = sum(1 for n in numbers if n <= 25)
+        small_count = sum(1 for n in numbers if n <= threshold)
         size_counts[small_count] += 1
         if any(b - a == 1 for a, b in zip(numbers, numbers[1:])):
             consecutive_hits += 1
 
-    total_main_numbers = total_draws * 7 if total_draws else 1
+    total_main_numbers = total_draws * main_count if total_draws else 1
     main_frequency = [
         {
             'number': num,
             'count': main_counts.get(num, 0),
             'probability': round(main_counts.get(num, 0) / total_main_numbers, 6),
         }
-        for num in range(1, 51)
+        for num in range(1, max_number + 1)
     ]
     bonus_frequency = [
         {
@@ -77,10 +94,10 @@ def compute_analysis(draws: List[Draw], rolling_window: int = 100, top_pairs: in
             'count': bonus_counts.get(num, 0),
             'probability': round(bonus_counts.get(num, 0) / max(total_draws, 1), 6),
         }
-        for num in range(1, 51)
+        for num in range(1, max_number + 1)
     ]
 
-    omissions = _compute_omissions(draws)
+    omissions = _compute_omissions(draws, max_number)
     hot_numbers = sorted(main_counts.items(), key=lambda item: item[1], reverse=True)[:10]
     cold_numbers = sorted(omissions, key=lambda item: item['omission'], reverse=True)[:10]
 
@@ -89,11 +106,11 @@ def compute_analysis(draws: List[Draw], rolling_window: int = 100, top_pairs: in
 
     odd_even_distribution = [
         {'odd_count': odd, 'count': odd_even_counts.get(odd, 0)}
-        for odd in range(0, 8)
+        for odd in range(0, main_count + 1)
     ]
     size_distribution = [
         {'small_count': small, 'count': size_counts.get(small, 0)}
-        for small in range(0, 8)
+        for small in range(0, main_count + 1)
     ]
 
     sum_distribution = _build_histogram(sums, bin_size=10)
@@ -132,14 +149,14 @@ def compute_analysis(draws: List[Draw], rolling_window: int = 100, top_pairs: in
     )
 
 
-def _compute_omissions(draws: List[Draw]) -> list:
-    latest_index = {num: None for num in range(1, 51)}
+def _compute_omissions(draws: List[Draw], max_number: int = 50) -> list:
+    latest_index = {num: None for num in range(1, max_number + 1)}
     for idx, draw in enumerate(draws):
         for number in draw.numbers:
             if latest_index[number] is None:
                 latest_index[number] = idx
     omissions = []
-    for num in range(1, 51):
+    for num in range(1, max_number + 1):
         omission = latest_index[num] if latest_index[num] is not None else len(draws)
         omissions.append({'number': num, 'omission': omission})
     return omissions

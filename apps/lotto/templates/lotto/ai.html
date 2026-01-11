@@ -1,7 +1,7 @@
 {% extends 'lotto/base.html' %}
 {% load static %}
 
-{% block title %}{% if lang == 'en' %}AI Lab | MaxOracle{% else %}AI 实验 | MaxOracle{% endif %}{% endblock %}
+{% block title %}{% if lang == 'en' %}AI Lab | {{ game.oracle_name }}{% else %}AI 实验 | {{ game.oracle_name }}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="d-flex align-items-center gap-2 mb-3">
@@ -53,7 +53,9 @@
 
 <div class="card shadow-sm">
     <div class="card-body">
-        <h5 class="card-title mb-3">{% if lang == 'en' %}Top 7 by Model Probability{% else %}模型概率 Top 7{% endif %}</h5>
+        <h5 class="card-title mb-3">
+            {% if lang == 'en' %}Top {{ game.main_count }} by Model Probability{% else %}模型概率 Top {{ game.main_count }}{% endif %}
+        </h5>
         <div id="ai-top" class="numbers-display"></div>
         <p id="ai-top-compare" class="small mb-2 match-line"></p>
         <p class="small text-muted mt-3 mb-0">
@@ -79,28 +81,28 @@
                 <svg viewBox="0 0 820 150" role="img" aria-label="AI prediction flow">
                     <defs>
                         <marker id="arrow-en" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
-                            <path d="M0,0 L6,3 L0,6" fill="#0d4f8c"/>
+                            <path d="M0,0 L6,3 L0,6" fill="var(--brand-blue)"/>
                         </marker>
                     </defs>
-                    <rect x="20" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <rect x="20" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="var(--brand-blue)" />
                     <text x="105" y="58" text-anchor="middle" font-size="12">Recent draws</text>
                     <text x="105" y="76" text-anchor="middle" font-size="12">(window N)</text>
 
-                    <rect x="230" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
-                    <text x="315" y="58" text-anchor="middle" font-size="12">50-dim</text>
+                    <rect x="230" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="var(--brand-blue)" />
+                    <text x="315" y="58" text-anchor="middle" font-size="12">{{ game.max_number }}-dim</text>
                     <text x="315" y="76" text-anchor="middle" font-size="12">multi-hot vector</text>
 
-                    <rect x="440" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <rect x="440" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="var(--brand-blue)" />
                     <text x="525" y="58" text-anchor="middle" font-size="12">Small neural net</text>
-                    <text x="525" y="76" text-anchor="middle" font-size="12">(50 → hidden → 50)</text>
+                    <text x="525" y="76" text-anchor="middle" font-size="12">({{ game.max_number }} → hidden → {{ game.max_number }})</text>
 
-                    <rect x="650" y="30" width="150" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <rect x="650" y="30" width="150" height="70" rx="12" fill="#f5f8fb" stroke="var(--brand-blue)" />
                     <text x="725" y="58" text-anchor="middle" font-size="12">Probabilities</text>
-                    <text x="725" y="76" text-anchor="middle" font-size="12">Heatmap + Top 7</text>
+                    <text x="725" y="76" text-anchor="middle" font-size="12">Heatmap + Top {{ game.main_count }}</text>
 
-                    <line x1="190" y1="65" x2="230" y2="65" stroke="#0d4f8c" stroke-width="2" marker-end="url(#arrow-en)"/>
-                    <line x1="400" y1="65" x2="440" y2="65" stroke="#0d4f8c" stroke-width="2" marker-end="url(#arrow-en)"/>
-                    <line x1="610" y1="65" x2="650" y2="65" stroke="#0d4f8c" stroke-width="2" marker-end="url(#arrow-en)"/>
+                    <line x1="190" y1="65" x2="230" y2="65" stroke="var(--brand-blue)" stroke-width="2" marker-end="url(#arrow-en)"/>
+                    <line x1="400" y1="65" x2="440" y2="65" stroke="var(--brand-blue)" stroke-width="2" marker-end="url(#arrow-en)"/>
+                    <line x1="610" y1="65" x2="650" y2="65" stroke="var(--brand-blue)" stroke-width="2" marker-end="url(#arrow-en)"/>
                 </svg>
             </div>
             <div class="row g-3 mb-3">
@@ -112,15 +114,19 @@
                     </p>
                     <h6 class="fw-bold mt-3">Step 2: Multi-hot encoding</h6>
                     <p class="small text-muted mb-2">
-                        Each draw becomes a 50-dimensional vector. A number drawn gets a 1, otherwise 0.
-                        Example: draw {3, 7, 12, 18, 27, 33, 44} becomes a vector with 1s at those positions.
+                        Each draw becomes a {{ game.max_number }}-dimensional vector. A number drawn gets a 1, otherwise 0.
+                        {% if game.key == '649' %}
+                            Example: draw {3, 7, 12, 18, 27, 33} becomes a vector with 1s at those positions.
+                        {% else %}
+                            Example: draw {3, 7, 12, 18, 27, 33, 44} becomes a vector with 1s at those positions.
+                        {% endif %}
                     </p>
                 </div>
                 <div class="col-lg-6">
                     <h6 class="fw-bold">Step 3: Small neural network</h6>
                     <p class="small text-muted mb-2">
-                        We use a single hidden layer (50 → hidden → 50). Each output neuron predicts the probability of
-                        one number appearing next.
+                        We use a single hidden layer ({{ game.max_number }} → hidden → {{ game.max_number }}). Each output neuron predicts
+                        the probability of one number appearing next.
                     </p>
                     <h6 class="fw-bold mt-3">Step 4: Probability output</h6>
                     <p class="small text-muted mb-2">
@@ -141,7 +147,7 @@
             <h6 class="fw-bold">How to read the heatmap</h6>
             <ul class="small">
                 <li>Darker cells mean higher model-estimated probability for that number.</li>
-                <li>“Top 7” lists the highest probabilities, not guaranteed outcomes.</li>
+                <li>“Top {{ game.main_count }}” lists the highest probabilities, not guaranteed outcomes.</li>
                 <li>The model is retrained on the latest window each time you run it.</li>
             </ul>
 
@@ -156,7 +162,11 @@
             <div class="bg-light border rounded p-3 mb-3">
                 <div class="fw-bold small mb-1">Concrete mapping example</div>
                 <div class="small text-muted">
-                    Suppose the last draw is {5, 12, 19, 22, 31, 38, 47}. The input vector has 1s at positions 5, 12, 19, 22, 31, 38, 47.
+                    {% if game.key == '649' %}
+                        Suppose the last draw is {5, 12, 19, 22, 31, 38}. The input vector has 1s at positions 5, 12, 19, 22, 31, 38.
+                    {% else %}
+                        Suppose the last draw is {5, 12, 19, 22, 31, 38, 47}. The input vector has 1s at positions 5, 12, 19, 22, 31, 38, 47.
+                    {% endif %}
                     After training, the model might output higher scores for numbers like 9, 21, or 41 if those tended to follow similar inputs in history.
                 </div>
             </div>
@@ -176,28 +186,28 @@
                 <svg viewBox="0 0 820 150" role="img" aria-label="AI 预测流程">
                     <defs>
                         <marker id="arrow-zh" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
-                            <path d="M0,0 L6,3 L0,6" fill="#0d4f8c"/>
+                            <path d="M0,0 L6,3 L0,6" fill="var(--brand-blue)"/>
                         </marker>
                     </defs>
-                    <rect x="20" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <rect x="20" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="var(--brand-blue)" />
                     <text x="105" y="58" text-anchor="middle" font-size="12">最近 N 期</text>
                     <text x="105" y="76" text-anchor="middle" font-size="12">历史开奖</text>
 
-                    <rect x="230" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
-                    <text x="315" y="58" text-anchor="middle" font-size="12">50 维多热向量</text>
-                    <text x="315" y="76" text-anchor="middle" font-size="12">每期 7 个 1</text>
+                    <rect x="230" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="var(--brand-blue)" />
+                    <text x="315" y="58" text-anchor="middle" font-size="12">{{ game.max_number }} 维多热向量</text>
+                    <text x="315" y="76" text-anchor="middle" font-size="12">每期 {{ game.main_count }} 个 1</text>
 
-                    <rect x="440" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <rect x="440" y="30" width="170" height="70" rx="12" fill="#f5f8fb" stroke="var(--brand-blue)" />
                     <text x="525" y="58" text-anchor="middle" font-size="12">小型神经网络</text>
-                    <text x="525" y="76" text-anchor="middle" font-size="12">50 → 隐层 → 50</text>
+                    <text x="525" y="76" text-anchor="middle" font-size="12">{{ game.max_number }} → 隐层 → {{ game.max_number }}</text>
 
-                    <rect x="650" y="30" width="150" height="70" rx="12" fill="#f5f8fb" stroke="#0d4f8c" />
+                    <rect x="650" y="30" width="150" height="70" rx="12" fill="#f5f8fb" stroke="var(--brand-blue)" />
                     <text x="725" y="58" text-anchor="middle" font-size="12">概率输出</text>
-                    <text x="725" y="76" text-anchor="middle" font-size="12">热力图 + Top 7</text>
+                    <text x="725" y="76" text-anchor="middle" font-size="12">热力图 + Top {{ game.main_count }}</text>
 
-                    <line x1="190" y1="65" x2="230" y2="65" stroke="#0d4f8c" stroke-width="2" marker-end="url(#arrow-zh)"/>
-                    <line x1="400" y1="65" x2="440" y2="65" stroke="#0d4f8c" stroke-width="2" marker-end="url(#arrow-zh)"/>
-                    <line x1="610" y1="65" x2="650" y2="65" stroke="#0d4f8c" stroke-width="2" marker-end="url(#arrow-zh)"/>
+                    <line x1="190" y1="65" x2="230" y2="65" stroke="var(--brand-blue)" stroke-width="2" marker-end="url(#arrow-zh)"/>
+                    <line x1="400" y1="65" x2="440" y2="65" stroke="var(--brand-blue)" stroke-width="2" marker-end="url(#arrow-zh)"/>
+                    <line x1="610" y1="65" x2="650" y2="65" stroke="var(--brand-blue)" stroke-width="2" marker-end="url(#arrow-zh)"/>
                 </svg>
             </div>
             <div class="row g-3 mb-3">
@@ -208,14 +218,18 @@
                     </p>
                     <h6 class="fw-bold mt-3">步骤 2：多热编码</h6>
                     <p class="small text-muted mb-2">
-                        每期号码编码成 50 维向量，开奖号码位置为 1，其余为 0。
-                        例如 {3, 7, 12, 18, 27, 33, 44} 对应 50 维中的 7 个 1。
+                        每期号码编码成 {{ game.max_number }} 维向量，开奖号码位置为 1，其余为 0。
+                        {% if game.key == '649' %}
+                            例如 {3, 7, 12, 18, 27, 33} 对应 {{ game.max_number }} 维中的 {{ game.main_count }} 个 1。
+                        {% else %}
+                            例如 {3, 7, 12, 18, 27, 33, 44} 对应 {{ game.max_number }} 维中的 {{ game.main_count }} 个 1。
+                        {% endif %}
                     </p>
                 </div>
                 <div class="col-lg-6">
                     <h6 class="fw-bold">步骤 3：小型神经网络</h6>
                     <p class="small text-muted mb-2">
-                        结构为 50 → 隐层 → 50，每个输出神经元对应一个号码的出现概率。
+                        结构为 {{ game.max_number }} → 隐层 → {{ game.max_number }}，每个输出神经元对应一个号码的出现概率。
                     </p>
                     <h6 class="fw-bold mt-3">步骤 4：概率输出</h6>
                     <p class="small text-muted mb-2">
@@ -235,7 +249,7 @@
             <h6 class="fw-bold">如何解读热力图</h6>
             <ul class="small">
                 <li>颜色越深表示模型估计概率越高。</li>
-                <li>“Top 7” 只是最高概率的列表，并不保证结果。</li>
+                <li>“Top {{ game.main_count }}” 只是最高概率的列表，并不保证结果。</li>
                 <li>每次运行都会基于当前窗口重新训练。</li>
             </ul>
 
@@ -250,7 +264,11 @@
             <div class="bg-light border rounded p-3 mb-3">
                 <div class="fw-bold small mb-1">具体映射示例</div>
                 <div class="small text-muted">
-                    假设最新一期号码为 {5, 12, 19, 22, 31, 38, 47}，输入向量对应位置为 1。
+                    {% if game.key == '649' %}
+                        假设最新一期号码为 {5, 12, 19, 22, 31, 38}，输入向量对应位置为 1。
+                    {% else %}
+                        假设最新一期号码为 {5, 12, 19, 22, 31, 38, 47}，输入向量对应位置为 1。
+                    {% endif %}
                     若历史上相似输入常跟随 9、21 或 41，模型就可能给这些号码更高的概率分数。
                 </div>
             </div>

@@ -6,6 +6,24 @@
     --brand-teal: #0b8a78;
     --brand-soft: #f3f6f8;
     --card-shadow: 0 6px 18px rgba(11, 47, 77, 0.12);
+    --chart-primary: rgba(13, 110, 253, 0.6);
+    --chart-accent: rgba(25, 135, 84, 0.6);
+    --heat-rgb: 11, 79, 140;
+    --match-bg: rgba(13, 79, 140, 0.12);
+    --match-color: #0d4f8c;
+}
+
+body.theme-649 {
+    --brand-navy: #4b1f1f;
+    --brand-blue: #9a3a3a;
+    --brand-teal: #c25757;
+    --brand-soft: #f6eeee;
+    --card-shadow: 0 6px 18px rgba(75, 31, 31, 0.12);
+    --chart-primary: rgba(154, 58, 58, 0.6);
+    --chart-accent: rgba(194, 87, 87, 0.6);
+    --heat-rgb: 154, 58, 58;
+    --match-bg: rgba(154, 58, 58, 0.14);
+    --match-color: #8a3232;
 }
 
 body {
@@ -111,8 +129,8 @@ body {
     text-align: center;
     padding: 0.05rem 0.4rem;
     border-radius: 999px;
-    background: rgba(13, 79, 140, 0.12);
-    color: #0d4f8c;
+    background: var(--match-bg);
+    color: var(--match-color);
 }
 
 .bonus-hit {
@@ -178,6 +196,47 @@ body {
 
 .navbar {
     background-color: var(--brand-navy) !important;
+}
+
+.oracle-switch {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.oracle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 0.35rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.oracle-btn.active {
+    background: #ffffff;
+    color: var(--brand-navy);
+    border-color: #ffffff;
+}
+
+.oracle-btn.inactive {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.oracle-btn.inactive:hover,
+.oracle-btn.inactive:focus {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .btn-primary {

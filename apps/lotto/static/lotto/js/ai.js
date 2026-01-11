@@ -4,6 +4,7 @@ const topContainer = document.getElementById('ai-top');
 const compareContainer = document.getElementById('ai-top-compare');
 const metaContainer = document.getElementById('ai-meta');
 const i18n = window.AI_I18N || {};
+const heatRgb = getComputedStyle(document.body || document.documentElement).getPropertyValue('--heat-rgb').trim() || '11, 79, 140';
 
 function renderHeatmap(probabilities) {
     if (!heatmap) return;
@@ -14,7 +15,7 @@ function renderHeatmap(probabilities) {
         cell.className = 'ai-cell';
         const intensity = Math.min(item.probability / maxProb, 1);
         const alpha = 0.12 + intensity * 0.78;
-        cell.style.backgroundColor = `rgba(11, 79, 140, ${alpha.toFixed(3)})`;
+        cell.style.backgroundColor = `rgba(${heatRgb}, ${alpha.toFixed(3)})`;
         cell.style.color = intensity > 0.55 ? '#ffffff' : '#1b2b38';
         const probText = `${(item.probability * 100).toFixed(1)}%`;
         cell.innerHTML = `<span class="ai-number">${item.number}</span><span class="ai-prob">${probText}</span>`;

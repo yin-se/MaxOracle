@@ -8,13 +8,14 @@ from ...services.ingestion import ingest_draws
 
 
 class Command(BaseCommand):
-    help = 'Ingest Lotto Max draws from configured data sources.'
+    help = 'Ingest lottery draws from configured data sources.'
 
     def add_arguments(self, parser):
         parser.add_argument('--since', type=str, help='Ingest draws since YYYY-MM-DD')
         parser.add_argument('--max-pages', type=int, help='Max pages to fetch, if supported')
         parser.add_argument('--source', type=str, default='auto', help='Data source key or auto')
         parser.add_argument('--incremental', action='store_true', help='Use latest draw date as start')
+        parser.add_argument('--game', type=str, default='max', help='Game key: max or 649')
 
     def handle(self, *args, **options):
         since_value = options.get('since')
@@ -35,5 +36,6 @@ class Command(BaseCommand):
             max_pages=options.get('max_pages'),
             source=options.get('source', 'auto'),
             incremental=incremental,
+            game=options.get('game', 'max'),
         )
         self.stdout.write(self.style.SUCCESS(result['message']))

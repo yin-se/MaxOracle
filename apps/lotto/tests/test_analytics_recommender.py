@@ -8,11 +8,11 @@ from apps.lotto.services.recommender import RecommendationEngine, jaccard
 
 class AnalyticsTests(TestCase):
     def setUp(self):
-        Draw.objects.create(date=date(2025, 12, 30), numbers=[1, 2, 3, 4, 5, 6, 7], bonus=8, source_url='', hash='a')
-        Draw.objects.create(date=date(2025, 12, 27), numbers=[10, 11, 12, 13, 14, 15, 16], bonus=17, source_url='', hash='b')
+        Draw.objects.create(game='max', date=date(2025, 12, 30), numbers=[1, 2, 3, 4, 5, 6, 7], bonus=8, source_url='', hash='a')
+        Draw.objects.create(game='max', date=date(2025, 12, 27), numbers=[10, 11, 12, 13, 14, 15, 16], bonus=17, source_url='', hash='b')
 
     def test_compute_analysis_counts(self):
-        draws = get_draws(window=2)
+        draws = get_draws(window=2, game='max')
         result = compute_analysis(draws, rolling_window=1)
         freq_map = {item['number']: item['count'] for item in result.main_frequency}
         assert freq_map[1] == 1
@@ -24,6 +24,7 @@ class RecommendationTests(TestCase):
     def setUp(self):
         for idx in range(1, 15):
             Draw.objects.create(
+                game='max',
                 date=date(2025, 1, idx),
                 numbers=[idx, idx + 1, idx + 2, idx + 3, idx + 4, idx + 5, idx + 6],
                 bonus=(idx + 7),
@@ -32,7 +33,7 @@ class RecommendationTests(TestCase):
             )
 
     def test_recommendations_valid(self):
-        draws = list(Draw.objects.all())
+        draws = list(Draw.objects.filter(game='max'))
         engine = RecommendationEngine(draws, seed='42')
         recs = engine.generate(count=3)
         assert recs

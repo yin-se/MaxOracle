@@ -100,21 +100,56 @@ CACHES = {
     }
 }
 
-LOTTO_CONFIG = {
-    'DATA_SOURCES': {
-        'olg': {
-            'past_results_url': 'https://www.olg.ca/en/lotto-max/past-results.html',
-            'enabled': True,
-        },
-        'lotto8': {
-            'past_results_url': 'https://www.lotto-8.com/canada/listltoCAMAX.asp',
-            'enabled': True,
-        },
-        'lotterypost': {
-            'past_results_url': 'https://www.lotterypost.com/results/zz/lottomax/past',
-            'enabled': True,
+LOTTO_DEFAULT_GAME = os.getenv('LOTTO_DEFAULT_GAME', 'max')
+
+LOTTO_GAMES = {
+    'max': {
+        'oracle_name': 'MaxOracle',
+        'game_name_en': 'Lotto Max',
+        'game_name_zh': 'Lotto Max',
+        'main_count': 7,
+        'max_number': 50,
+        'theme_class': '',
+        'data_sources': {
+            'olg': {
+                'past_results_url': 'https://www.olg.ca/en/lotto-max/past-results.html',
+                'enabled': True,
+            },
+            'lotto8': {
+                'past_results_url': 'https://www.lotto-8.com/canada/listltoCAMAX.asp',
+                'enabled': True,
+            },
+            'lotterypost': {
+                'past_results_url': 'https://www.lotterypost.com/results/zz/lottomax/past',
+                'enabled': True,
+            },
         },
     },
+    '649': {
+        'oracle_name': '649Oracle',
+        'game_name_en': 'Lotto 6/49',
+        'game_name_zh': 'Lotto 6/49',
+        'main_count': 6,
+        'max_number': 49,
+        'theme_class': 'theme-649',
+        'data_sources': {
+            'olg': {
+                'past_results_url': 'https://www.olg.ca/en/lotto-649/past-results.html',
+                'enabled': True,
+            },
+            'lotto8': {
+                'past_results_url': 'https://www.lotto-8.com/canada/listltoCA649.asp',
+                'enabled': True,
+            },
+            'lotterypost': {
+                'past_results_url': 'https://www.lotterypost.com/results/zz/lotto-649/past',
+                'enabled': True,
+            },
+        },
+    },
+}
+
+LOTTO_CONFIG = {
     'DEFAULT_WINDOW': int(os.getenv('LOTTO_WINDOW', '1000')),
     'DEFAULT_ROLLING_WINDOW': int(os.getenv('LOTTO_ROLLING_WINDOW', '100')),
     'RECOMMENDATION_COUNT': int(os.getenv('LOTTO_RECOMMENDATION_COUNT', '5')),

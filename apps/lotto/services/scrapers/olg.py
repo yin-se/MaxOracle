@@ -10,7 +10,7 @@ from dateutil import parser as date_parser
 
 from .base import BaseScraper, DrawRecord, ScrapeError, logger
 
-NUMBER_PATTERN = re.compile(r'\b([1-9]|[1-4][0-9]|50)\b')
+NUMBER_PATTERN = re.compile(r'\b\d+\b')
 DATE_PATTERNS = [
     re.compile(r'\b\d{4}-\d{2}-\d{2}\b'),
     re.compile(r'\b\w+\s+\d{1,2},\s*\d{4}\b'),
@@ -90,9 +90,14 @@ class OlgScraper(BaseScraper):
         draw_date = self._parse_date(str(date_value))
         numbers = self._parse_numbers(numbers_value)
         bonus = int(bonus_value)
-        if draw_date is None or not numbers:
+        if draw_date is None or len(numbers) < self.main_count:
             return None
-        return DrawRecord(date=draw_date, numbers=numbers, bonus=bonus, source_url=self.base_url)
+        return DrawRecord(
+            date=draw_date,
+            numbers=numbers[: self.main_count],
+            bonus=bonus,
+            source_url=self.base_url,
+        )
 
     def _parse_table_rows(self, soup: BeautifulSoup) -> List[DrawRecord]:
         records: List[DrawRecord] = []
@@ -104,12 +109,13 @@ class OlgScraper(BaseScraper):
             if not draw_date:
                 continue
             numbers = [int(m) for m in NUMBER_PATTERN.findall(row_text)]
-            if len(numbers) < 8:
+            numbers = [n for n in numbers if 1 <= n <= self.max_number]
+            if len(numbers) < self.main_count + 1:
                 continue
             record = DrawRecord(
                 date=draw_date,
-                numbers=numbers[:7],
-                bonus=numbers[7],
+                numbers=numbers[: self.main_count],
+                bonus=numbers[self.main_count],
                 source_url=self.base_url,
             )
             records.append(record)
@@ -132,7 +138,7 @@ class OlgScraper(BaseScraper):
 
     def _parse_numbers(self, value: object) -> List[int]:
         if isinstance(value, list):
-            return [int(n) for n in value if str(n).isdigit()]
+            return [int(n) for n in value if str(n).isdigit() and 1 <= int(n) <= self.max_number]
         if isinstance(value, str):
-            return [int(n) for n in NUMBER_PATTERN.findall(value)]
+            return [int(n) for n in NUMBER_PATTERN.findall(value) if 1 <= int(n) <= self.max_number]
         return []

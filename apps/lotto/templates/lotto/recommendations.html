@@ -1,7 +1,7 @@
 {% extends 'lotto/base.html' %}
 {% load static %}
 
-{% block title %}{% if lang == 'en' %}Recommendations | MaxOracle{% else %}推荐号码 | MaxOracle{% endif %}{% endblock %}
+{% block title %}{% if lang == 'en' %}Recommendations | {{ game.oracle_name }}{% else %}推荐号码 | {{ game.oracle_name }}{% endif %}{% endblock %}
 
 {% block content %}
 <h2 class="mb-3">
@@ -15,6 +15,10 @@
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form class="row g-3" method="get">
+            <input type="hidden" name="game" value="{{ game.key }}">
+            {% if lang == 'en' %}
+            <input type="hidden" name="lang" value="en">
+            {% endif %}
             {% if seed %}
             <input type="hidden" name="seed" value="{{ seed }}">
             {% endif %}

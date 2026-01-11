@@ -1,99 +1,189 @@
 {% extends 'lotto/base.html' %}
 
-{% block title %}{% if lang == 'en' %}Rules | MaxOracle{% else %}规则介绍 | MaxOracle{% endif %}{% endblock %}
+{% block title %}{% if lang == 'en' %}Rules | {{ game.oracle_name }}{% else %}规则介绍 | {{ game.oracle_name }}{% endif %}{% endblock %}
 
 {% block content %}
 {% if lang == 'en' %}
-<h2 class="mb-3">Lotto Max Rules (OLG)</h2>
+    {% if game.key == '649' %}
+        <h2 class="mb-3">Lotto 6/49 Rules (OLG)</h2>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <h5 class="card-title">Main Draw and Bonus</h5>
-        <ul>
-            <li>Each draw selects 7 main numbers plus 1 Bonus number from 1–50. All 8 numbers are unique.</li>
-            <li>Players choose 7 main numbers; the Bonus is drawn by the system for prize tier evaluation.</li>
-        </ul>
-    </div>
-</div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Classic Draw and Bonus</h5>
+                <ul>
+                    <li>Each draw selects 6 main numbers plus 1 Bonus number from 1–49. All 7 numbers are unique.</li>
+                    <li>Players choose 6 main numbers; the Bonus is drawn by the system for prize tier evaluation.</li>
+                </ul>
+            </div>
+        </div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <h5 class="card-title">Prize Tiers and “+” Meaning</h5>
-        <p>“+” means the Bonus number is matched. For example, “6/7 + Bonus” means 6 main numbers plus the Bonus.</p>
-        <ul>
-            <li>7/7</li>
-            <li>6/7 + Bonus</li>
-            <li>6/7</li>
-            <li>5/7 + Bonus</li>
-            <li>5/7</li>
-            <li>4/7 + Bonus</li>
-            <li>4/7</li>
-            <li>3/7 + Bonus</li>
-            <li>3/7</li>
-        </ul>
-    </div>
-</div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Prize Tiers and “+” Meaning</h5>
+                <p>“+” means the Bonus number is matched. For example, “5/6 + Bonus” means 5 main numbers plus the Bonus.</p>
+                <ul>
+                    <li>6/6</li>
+                    <li>5/6 + Bonus</li>
+                    <li>5/6</li>
+                    <li>4/6</li>
+                    <li>3/6</li>
+                    <li>2/6 + Bonus</li>
+                </ul>
+            </div>
+        </div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <h5 class="card-title">$5 Play and Analysis Unit</h5>
-        <p>A $5 play typically contains 3 selections. Each selection is 7 main numbers, which is the analysis unit used on this site.</p>
-    </div>
-</div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">$3 Play and Analysis Unit</h5>
+                <p>A $3 play typically contains 1 selection of 6 main numbers, which is the analysis unit used on this site.</p>
+            </div>
+        </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <h5 class="card-title">MaxMillions</h5>
-        <p>MaxMillions is an extra draw triggered when the jackpot reaches a threshold, with different rules from the main draw.</p>
-        <p>We currently focus on the main draw and Bonus analysis; MaxMillions can be added later via configuration.</p>
-        <p class="text-muted mb-0">Note: rule text may vary by province. This site follows OLG rules and keeps data sources configurable.</p>
-    </div>
-</div>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Gold Ball Draw</h5>
+                <p>Lotto 6/49 includes a Gold Ball draw alongside the Classic draw, with a separate jackpot structure.</p>
+                <p>We currently focus on the Classic draw and Bonus analysis; Gold Ball details can be added later via configuration.</p>
+                <p class="text-muted mb-0">Note: rule text may vary by province. This site follows OLG rules and keeps data sources configurable.</p>
+            </div>
+        </div>
+    {% else %}
+        <h2 class="mb-3">Lotto Max Rules (OLG)</h2>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Main Draw and Bonus</h5>
+                <ul>
+                    <li>Each draw selects 7 main numbers plus 1 Bonus number from 1–50. All 8 numbers are unique.</li>
+                    <li>Players choose 7 main numbers; the Bonus is drawn by the system for prize tier evaluation.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Prize Tiers and “+” Meaning</h5>
+                <p>“+” means the Bonus number is matched. For example, “6/7 + Bonus” means 6 main numbers plus the Bonus.</p>
+                <ul>
+                    <li>7/7</li>
+                    <li>6/7 + Bonus</li>
+                    <li>6/7</li>
+                    <li>5/7 + Bonus</li>
+                    <li>5/7</li>
+                    <li>4/7 + Bonus</li>
+                    <li>4/7</li>
+                    <li>3/7 + Bonus</li>
+                    <li>3/7</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">$5 Play and Analysis Unit</h5>
+                <p>A $5 play typically contains 3 selections. Each selection is 7 main numbers, which is the analysis unit used on this site.</p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">MaxMillions</h5>
+                <p>MaxMillions is an extra draw triggered when the jackpot reaches a threshold, with different rules from the main draw.</p>
+                <p>We currently focus on the main draw and Bonus analysis; MaxMillions can be added later via configuration.</p>
+                <p class="text-muted mb-0">Note: rule text may vary by province. This site follows OLG rules and keeps data sources configurable.</p>
+            </div>
+        </div>
+    {% endif %}
 {% else %}
-<h2 class="mb-3">Lotto Max 规则介绍（OLG）</h2>
+    {% if game.key == '649' %}
+        <h2 class="mb-3">Lotto 6/49 规则介绍（OLG）</h2>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <h5 class="card-title">主抽奖（Main Draw）与 Bonus</h5>
-        <ul>
-            <li>每期从 1–50 中随机开出 7 个主号 + 1 个 Bonus 号，共 8 个号码，且互不重复。</li>
-            <li>玩家只选择 7 个主号，Bonus 号由系统抽出，仅用于中奖类别判定。</li>
-        </ul>
-    </div>
-</div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Classic Draw 与 Bonus</h5>
+                <ul>
+                    <li>每期从 1–49 中随机开出 6 个主号 + 1 个 Bonus 号，共 7 个号码，且互不重复。</li>
+                    <li>玩家只选择 6 个主号，Bonus 号由系统抽出，仅用于中奖类别判定。</li>
+                </ul>
+            </div>
+        </div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <h5 class="card-title">中奖类别与“+”含义</h5>
-        <p>“+” 表示命中 Bonus 号。例如 “6/7+Bonus” 表示命中 6 个主号且 Bonus 号也命中。</p>
-        <ul>
-            <li>7/7</li>
-            <li>6/7 + Bonus</li>
-            <li>6/7</li>
-            <li>5/7 + Bonus</li>
-            <li>5/7</li>
-            <li>4/7 + Bonus</li>
-            <li>4/7</li>
-            <li>3/7 + Bonus</li>
-            <li>3/7</li>
-        </ul>
-    </div>
-</div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">中奖类别与“+”含义</h5>
+                <p>“+” 表示命中 Bonus 号。例如 “5/6+Bonus” 表示命中 5 个主号且 Bonus 号也命中。</p>
+                <ul>
+                    <li>6/6</li>
+                    <li>5/6 + Bonus</li>
+                    <li>5/6</li>
+                    <li>4/6</li>
+                    <li>3/6</li>
+                    <li>2/6 + Bonus</li>
+                </ul>
+            </div>
+        </div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <h5 class="card-title">$5 Play 与分析单位</h5>
-        <p>一张 $5 play 通常包含 3 组（3 selections）号码，每组为 7 个主号。本网站以“每组 7 个号码”为统计与推荐的基本分析单位。</p>
-    </div>
-</div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">$3 Play 与分析单位</h5>
+                <p>一张 $3 play 通常包含 1 组（1 selection）号码，每组为 6 个主号。本网站以“每组 6 个号码”为统计与推荐的基本分析单位。</p>
+            </div>
+        </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <h5 class="card-title">MaxMillions 说明</h5>
-        <p>MaxMillions 是在主奖池达到门槛后触发的额外抽奖，规则与主抽奖不同。</p>
-        <p>当前版本先聚焦主抽奖与 Bonus 的统计分析，后续可通过配置扩展 MaxMillions 数据源。</p>
-        <p class="text-muted mb-0">说明：不同省份的规则文本可能略有差异，本网站以 OLG 规则页面为主，并在代码中将数据源配置化。</p>
-    </div>
-</div>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Gold Ball Draw 说明</h5>
+                <p>Lotto 6/49 采用 Classic Draw 与 Gold Ball Draw 的双开奖结构，奖金规则独立。</p>
+                <p>当前版本先聚焦 Classic Draw 与 Bonus 的统计分析，Gold Ball 相关规则可后续配置扩展。</p>
+                <p class="text-muted mb-0">说明：不同省份的规则文本可能略有差异，本网站以 OLG 规则页面为主，并在代码中将数据源配置化。</p>
+            </div>
+        </div>
+    {% else %}
+        <h2 class="mb-3">Lotto Max 规则介绍（OLG）</h2>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">主抽奖（Main Draw）与 Bonus</h5>
+                <ul>
+                    <li>每期从 1–50 中随机开出 7 个主号 + 1 个 Bonus 号，共 8 个号码，且互不重复。</li>
+                    <li>玩家只选择 7 个主号，Bonus 号由系统抽出，仅用于中奖类别判定。</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">中奖类别与“+”含义</h5>
+                <p>“+” 表示命中 Bonus 号。例如 “6/7+Bonus” 表示命中 6 个主号且 Bonus 号也命中。</p>
+                <ul>
+                    <li>7/7</li>
+                    <li>6/7 + Bonus</li>
+                    <li>6/7</li>
+                    <li>5/7 + Bonus</li>
+                    <li>5/7</li>
+                    <li>4/7 + Bonus</li>
+                    <li>4/7</li>
+                    <li>3/7 + Bonus</li>
+                    <li>3/7</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">$5 Play 与分析单位</h5>
+                <p>一张 $5 play 通常包含 3 组（3 selections）号码，每组为 7 个主号。本网站以“每组 7 个号码”为统计与推荐的基本分析单位。</p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">MaxMillions 说明</h5>
+                <p>MaxMillions 是在主奖池达到门槛后触发的额外抽奖，规则与主抽奖不同。</p>
+                <p>当前版本先聚焦主抽奖与 Bonus 的统计分析，后续可通过配置扩展 MaxMillions 数据源。</p>
+                <p class="text-muted mb-0">说明：不同省份的规则文本可能略有差异，本网站以 OLG 规则页面为主，并在代码中将数据源配置化。</p>
+            </div>
+        </div>
+    {% endif %}
 {% endif %}
 {% endblock %}

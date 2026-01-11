@@ -1,6 +1,6 @@
 {% extends 'lotto/base.html' %}
 
-{% block title %}{% if lang == 'en' %}Data Status | MaxOracle{% else %}数据状态 | MaxOracle{% endif %}{% endblock %}
+{% block title %}{% if lang == 'en' %}Data Status | {{ game.oracle_name }}{% else %}数据状态 | {{ game.oracle_name }}{% endif %}{% endblock %}
 
 {% block content %}
 <h2 class="mb-3">{% if lang == 'en' %}Data Status{% else %}数据状态{% endif %}</h2>

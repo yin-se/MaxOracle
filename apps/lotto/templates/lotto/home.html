@@ -1,20 +1,32 @@
 {% extends 'lotto/base.html' %}
 {% load static %}
 
-{% block title %}{% if lang == 'en' %}Home | MaxOracle{% else %}主页 | MaxOracle{% endif %}{% endblock %}
+{% block title %}{% if lang == 'en' %}Home | {{ game.oracle_name }}{% else %}主页 | {{ game.oracle_name }}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="hero-section mb-5">
     <div class="row align-items-center g-4">
         <div class="col-lg-7">
-    <span class="pill-badge">{% if lang == 'en' %}OLG Lotto Max Insights{% else %}OLG Lotto Max 数据分析{% endif %}</span>
-    <h1 class="display-5 fw-bold mt-3">{% if lang == 'en' %}What is Lotto Max?{% else %}Lotto Max 是什么？{% endif %}</h1>
+    <span class="pill-badge">
+        {% if lang == 'en' %}
+            OLG {{ game.game_name_en }} Insights
+        {% else %}
+            OLG {{ game.game_name_zh }} 数据分析
+        {% endif %}
+    </span>
+    <h1 class="display-5 fw-bold mt-3">
+        {% if lang == 'en' %}
+            What is {{ game.game_name_en }}?
+        {% else %}
+            {{ game.game_name_zh }} 是什么？
+        {% endif %}
+    </h1>
             <p class="lead mt-3 mb-4">
         {% if lang == 'en' %}
-        Lotto Max is a popular Canadian lottery. Each draw selects 7 main numbers plus 1 Bonus from 1–50.
+        {{ game.game_name_en }} is a popular Canadian lottery. Each draw selects {{ game.main_count }} main numbers plus 1 Bonus from 1–{{ game.max_number }}.
         This site focuses on historical statistics, visual trends, and structural analysis to help you understand number distributions.
         {% else %}
-        Lotto Max 是加拿大热门乐透游戏之一，每期从 1–50 中抽出 7 个主号和 1 个 Bonus 号。
+        {{ game.game_name_zh }} 是加拿大热门乐透游戏之一，每期从 1–{{ game.max_number }} 中抽出 {{ game.main_count }} 个主号和 1 个 Bonus 号。
         本站聚焦历史数据统计、可视化趋势与结构分析，帮助你更系统地理解号码分布。
         {% endif %}
             </p>
@@ -51,7 +63,7 @@
             </div>
         </div>
         <div class="col-lg-5 text-center">
-            <img class="hero-illustration shadow-lg rounded-4" src="{% static 'lotto/img/lotto-hero.svg' %}" alt="Lotto Max illustration">
+            <img class="hero-illustration shadow-lg rounded-4" src="{% static 'lotto/img/lotto-hero.svg' %}" alt="Lottery illustration">
         </div>
     </div>
 </div>
@@ -60,14 +72,24 @@
     <div class="col-lg-4">
         <div class="feature-card">
             <h6>{% if lang == 'en' %}Rules Snapshot{% else %}规则速览{% endif %}</h6>
-            <h4 class="mt-2">{% if lang == 'en' %}How Lotto Max Works{% else %}Lotto Max 玩法{% endif %}</h4>
+            <h4 class="mt-2">
+                {% if lang == 'en' %}How {{ game.game_name_en }} Works{% else %}{{ game.game_name_zh }} 玩法{% endif %}
+            </h4>
             <p class="text-muted mb-0">
                 {% if lang == 'en' %}
-                Each draw randomly selects 7 main numbers and 1 Bonus from 1–50.
-                Common prize tiers include 7/7, 6/7+Bonus, 6/7, and more.
+                Each draw randomly selects {{ game.main_count }} main numbers and 1 Bonus from 1–{{ game.max_number }}.
+                {% if game.key == '649' %}
+                    Common prize tiers include 6/6, 5/6+Bonus, 5/6, and more.
                 {% else %}
-                每期从 1–50 中随机开出 7 个主号与 1 个 Bonus 号。
-                常见中奖档位包含 7/7、6/7+Bonus、6/7 等。
+                    Common prize tiers include 7/7, 6/7+Bonus, 6/7, and more.
+                {% endif %}
+                {% else %}
+                每期从 1–{{ game.max_number }} 中随机开出 {{ game.main_count }} 个主号与 1 个 Bonus 号。
+                {% if game.key == '649' %}
+                    常见中奖档位包含 6/6、5/6+Bonus、5/6 等。
+                {% else %}
+                    常见中奖档位包含 7/7、6/7+Bonus、6/7 等。
+                {% endif %}
                 {% endif %}
             </p>
         </div>
